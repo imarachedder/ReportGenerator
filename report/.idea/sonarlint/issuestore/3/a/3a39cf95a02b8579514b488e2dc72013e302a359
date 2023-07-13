@@ -1,0 +1,12 @@
+
+;python:S125"Remove this commented out code.(­óèışÿÿÿÿ
+;python:S125"Remove this commented out code.(ß§÷Óüÿÿÿÿ
+;python:S125"Remove this commented out code.(úÃÊÒúÿÿÿÿ
+mpython:S116"VRename this field "verticalLayout" to match the regular expression ^[_a-z][_a-z0-9]*$.(çÙ´Õ
+hpython:S116'"QRename this field "buttonBox" to match the regular expression ^[_a-z][_a-z0-9]*$.(¿µ€ò
+qpython:S116#"URename this field "webEngineView" to match the regular expression ^[_a-z][_a-z0-9]*$.(ŠÄıÿÿÿÿ
+python:S101"cRename class "Ui_Dialog" to match the regular expression ^_?([A-Z_][a-zA-Z0-9]*|[a-z_][a-z0-9_]*)$.(ÄÒ“Ñıÿÿÿÿ
+npython:S117"RRename this parameter "Dialog" to match the regular expression ^[_a-z][a-z0-9_]*$.(¦ÜÕåøÿÿÿÿ
+gpython:S100"KRename method "setupUi" to match the regular expression ^[a-z_][a-z0-9_]*$.(¦ÜÕåøÿÿÿÿ
+npython:S1172"RRename this parameter "Dialog" to match the regular expression ^[_a-z][a-z0-9_]*$.(Áë¢èşÿÿÿÿ
+mpython:S1002"QRename method "retranslateUi" to match the regular expression ^[a-z_][a-z0-9_]*$.(Áë¢èşÿÿÿÿ

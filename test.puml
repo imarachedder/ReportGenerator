@@ -1,0 +1,19 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+
+abstract class AbstractList
+
+User -> DB: Authentication Request
+DB --> User: Authentication Response
+
+AbstractList <|-- Query
+
+class Query {
+    Object [] elementData
+    size()
+
+}
+
+
+@enduml

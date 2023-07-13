@@ -1,0 +1,59 @@
+select * from Group_Description join Attribute on Group_Description.ID_Type_Attr = Attribute.ID_Type_Attr where Item_Name='Ось дороги' and ID_High='1'
+
+Запрос на выявление технических показателей
+
+select Attribute.ID_Attribute, Attribute.ID_High, Attribute.L1, Attribute.L2, Params.ValueParam, Types_Description.Param_Name, Groups.ID_Type_Attr, Group_Description.Item_Name
+from Attribute inner join Params on Attribute.ID_Attribute = Params.ID_Attribute inner join
+Types_Description on Params.ID_Param = Types_Description.ID_Param inner join
+Groups on Types_Description.ID_Type_Attr = Groups.ID_Type_Attr inner join
+Group_Description on Groups.ID_Type_Attr = Group_Description.ID_Type_Attr
+
+
+ВЫТАСКИВАЕМ ОСИ
+
+SELECT Road.Name, Way.Description, High.Description, Attribute.L1, Attribute.L2, Group_Description.Item_Name
+        FROM Road INNER JOIN Way ON Road.ID_Road = Way.ID_Road INNER JOIN High ON Way.ID_Way = High.ID_Way
+        INNER JOIN Attribute ON High.ID_High = Attribute.ID_High inner join Group_Description
+        ON Attribute.ID_Type_Attr = Group_Description.ID_Type_Attr
+        WHERE Road.Name=? AND Item_Name=?;
+
+
+
+ГЛУБИНА КОЛЕИ
+
+select Attribute.ID_Attribute, Attribute.ID_High, Attribute.L1, Attribute.L2, Params.ValueParam, Types_Description.Param_Name, Groups.ID_Type_Attr, Group_Description.Item_Name
+from Attribute inner join Params on Attribute.ID_Attribute = Params.ID_Attribute inner join
+Types_Description on Params.ID_Param = Types_Description.ID_Param inner join
+Groups on Types_Description.ID_Type_Attr = Groups.ID_Type_Attr inner join
+Group_Description on Groups.ID_Type_Attr = Group_Description.ID_Type_Attr
+where Group_Description.Item_Name='Глубина колеи'
+
+
+
+
+
+ерунда
+
+ SELECT High.Description, Attribute.L1, Attribute.L2, Group_Description.Item_Name FROM High JOIN
+            Attribute ON High.ID_High = Attribute.ID_High JOIN Group_Description ON Attribute.ID_Type_Attr =
+            Group_Description.ID_Type_Attr WHERe Item_Name='Ось дороги';
+
+
+select Road.Name, Way.Description, High.Description, Attribute.L1, Attribute.L2, Group_Description.Item_Name
+			from Road inner join Way on Road.ID_Road = Way.ID_Road
+			inner join High on Way.ID_Way = High.ID_Way inner join
+			Attribute on High.ID_High = Attribute.ID_High inner join
+			Group_Description ON Attribute.ID_Type_Attr = Group_Description.ID_Type_Attr
+			WHERE  Item_Name = 'Ось дороги';
+
+
+select * from Unit;
+
+
+
+Информация о дороге
+
+SELECT dbo.Road.Name, dbo.Way.ID_Way, dbo.Way.Description, dbo.High.ID_High, dbo.High.ID_Way AS Expr1, dbo.High.Description AS Expr2
+FROM            dbo.Road INNER JOIN
+                         dbo.Way ON dbo.Road.ID_Road = dbo.Way.ID_Road INNER JOIN
+                         dbo.High ON dbo.Way.ID_Way = dbo.High.ID_Way
