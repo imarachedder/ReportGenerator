@@ -8,6 +8,7 @@ User -> DB: Authentication Request
 DB --> User: Authentication Response
 
 AbstractList <|-- Query
+DB <|== AbstractList
 
 class Query {
     Object [] elementData
