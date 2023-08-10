@@ -3,7 +3,7 @@ import db
 from interface import connection
 
 
-def main ():
+def main():
     main_window = connection.main()
     # con_db = db.Query(main_window.window.get_name_database())
     # print(noname_con_db.database)

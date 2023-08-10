@@ -8,22 +8,24 @@ import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
+from interface.preview import Preview
+from interface.json_worker import JsonWorker
+from settings import path_icon_done, path_icon_not_done
+
 
 class Ui_MainWindow3(object):
     def setupUi (self, MainWindow3):
         MainWindow3.setObjectName("MainWindow3")
-        MainWindow3.resize(600, 366)
-        MainWindow3.setMaximumSize(QtCore.QSize(600, 600))
-        icon = QtGui.QIcon.fromTheme("C:\\Users\\sibregion\\Desktop\\icons8-автомобиль-26.png")
-        MainWindow3.setWindowIcon(icon)
-        self.centralwidget = QtWidgets.QWidget(parent=MainWindow3)
-        self.centralwidget.setMaximumSize(QtCore.QSize(600, 600))
+        MainWindow3.resize(800, 600)
+        MainWindow3.setMaximumSize(QtCore.QSize(800, 600))
+        self.centralwidget = QtWidgets.QWidget(parent = MainWindow3)
+        self.centralwidget.setMaximumSize(QtCore.QSize(800, 600))
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
         self.horizontalLayout.setContentsMargins(-1, 9, -1, 1)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.tabWidget = QtWidgets.QTabWidget(parent = self.centralwidget)
-        self.tabWidget.setMaximumSize(QtCore.QSize(600, 600))
+        self.tabWidget.setMaximumSize(QtCore.QSize(800, 600))
         self.tabWidget.setTabletTracking(True)
         self.tabWidget.setAcceptDrops(False)
         self.tabWidget.setAutoFillBackground(True)
@@ -47,24 +49,36 @@ class Ui_MainWindow3(object):
         self.tabWidget.setTabBarAutoHide(True)
         self.tabWidget.setObjectName("tabWidget")
         self.tab1 = QtWidgets.QWidget()
+
+        self.icon_tab1 = QtGui.QIcon()
+        self.icon_tab1.addPixmap(QtGui.QPixmap(path_icon_not_done),
+                                 QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+
         self.tab1.setObjectName("tab1")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.tab1)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.plainTextEdit1 = QtWidgets.QPlainTextEdit(parent = self.tab1)
+        self.plainTextEdit_1 = QtWidgets.QPlainTextEdit(parent = self.tab1)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
                                            QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.plainTextEdit1.sizePolicy().hasHeightForWidth())
-        self.plainTextEdit1.setSizePolicy(sizePolicy)
-        self.plainTextEdit1.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        self.plainTextEdit1.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        self.plainTextEdit1.setBackgroundVisible(False)
-        self.plainTextEdit1.setCenterOnScroll(True)
-        self.plainTextEdit1.setObjectName("plainTextEdit1")
-        self.verticalLayout_2.addWidget(self.plainTextEdit1)
-        self.tabWidget.addTab(self.tab1, "")
+        sizePolicy.setHeightForWidth(self.plainTextEdit_1.sizePolicy().hasHeightForWidth())
+        self.plainTextEdit_1.setSizePolicy(sizePolicy)
+        self.plainTextEdit_1.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        self.plainTextEdit_1.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.plainTextEdit_1.setBackgroundVisible(False)
+        self.plainTextEdit_1.setCenterOnScroll(True)
+        self.plainTextEdit_1.setObjectName("plainTextEdit_1")
+        self.verticalLayout_2.addWidget(self.plainTextEdit_1)
+
+        self.tabWidget.addTab(self.tab1, self.icon_tab1, "Краткая истоическая справка")
         self.tab_2 = QtWidgets.QWidget()
+        self.icon_tab2 = QtGui.QIcon()
+
+        self.icon_tab2.addPixmap(
+            QtGui.QPixmap(path_icon_not_done),
+            QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+
         self.tab_2.setObjectName("tab_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.tab_2)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
@@ -73,8 +87,14 @@ class Ui_MainWindow3(object):
         self.plainTextEdit_2.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
         self.plainTextEdit_2.setObjectName("plainTextEdit_2")
         self.verticalLayout_3.addWidget(self.plainTextEdit_2)
-        self.tabWidget.addTab(self.tab_2, "")
+        self.tabWidget.addTab(self.tab_2, self.icon_tab2, "Связь дороги с железнодорожными и водными путями")
         self.tab_3 = QtWidgets.QWidget()
+
+        self.icon_tab3 = QtGui.QIcon()
+        self.icon_tab3.addPixmap(
+            QtGui.QPixmap(path_icon_not_done),
+            QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+
         self.tab_3.setObjectName("tab_3")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.tab_3)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -82,8 +102,12 @@ class Ui_MainWindow3(object):
         self.plainTextEdit_3.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.plainTextEdit_3.setObjectName("plainTextEdit_3")
         self.verticalLayout.addWidget(self.plainTextEdit_3)
-        self.tabWidget.addTab(self.tab_3, "")
+        self.tabWidget.addTab(self.tab_3, self.icon_tab3, "Экономическое и административное занчение дороги")
         self.tab_4 = QtWidgets.QWidget()
+        self.icon_tab4 = QtGui.QIcon()
+        self.icon_tab4.addPixmap(
+            QtGui.QPixmap(path_icon_not_done),
+            QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.tab_4.setObjectName("tab_4")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.tab_4)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
@@ -91,8 +115,12 @@ class Ui_MainWindow3(object):
         self.plainTextEdit_4.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.plainTextEdit_4.setObjectName("plainTextEdit_4")
         self.verticalLayout_5.addWidget(self.plainTextEdit_4)
-        self.tabWidget.addTab(self.tab_4, "")
+        self.tabWidget.addTab(self.tab_4, self.icon_tab4, "Характеристика движения")
         self.tab_5 = QtWidgets.QWidget()
+        self.icon_tab5 = QtGui.QIcon()
+        self.icon_tab5.addPixmap(
+            QtGui.QPixmap(path_icon_not_done),
+            QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.tab_5.setObjectName("tab_5")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.tab_5)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
@@ -111,18 +139,26 @@ class Ui_MainWindow3(object):
         self.done_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
         self.done_pushButton.setObjectName("done_pushButton")
         self.verticalLayout_4.addWidget(self.done_pushButton)
-        self.tabWidget.addTab(self.tab_5, "")
+
+        self.back_pushButton = QtWidgets.QPushButton(parent = self.tab_5)
+        sizePolicy.setHeightForWidth(self.back_pushButton.sizePolicy().hasHeightForWidth())
+        self.back_pushButton.setSizePolicy(sizePolicy)
+        self.back_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
+        self.back_pushButton.setObjectName("back_pushButton")
+        self.verticalLayout_4.addWidget(self.back_pushButton)
+
+        self.tabWidget.addTab(self.tab_5, self.icon_tab5, "Топографические условия района")
         self.horizontalLayout.addWidget(self.tabWidget)
         MainWindow3.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow3)
-        self.tabWidget.setCurrentIndex(4)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow3)
 
     def retranslateUi (self, MainWindow3):
         _translate = QtCore.QCoreApplication.translate
         MainWindow3.setWindowTitle(_translate("MainWindow3", "Дорога \"Название дороги\""))
-        self.plainTextEdit1.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
+        self.plainTextEdit_1.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab1),
                                   _translate("MainWindow3", "Краткая историческая справка"))
         self.plainTextEdit_2.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
@@ -136,19 +172,88 @@ class Ui_MainWindow3(object):
                                   _translate("MainWindow3", "Характеристика движения"))
         self.plainTextEdit_5.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.done_pushButton.setText(_translate("MainWindow3", "Готово"))
+        self.back_pushButton.setText(_translate("MainWindow3", "Назад"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5),
                                   _translate("MainWindow3", "Топографические условия района"))
 
 
-class Window3(QtWidgets.QMainWindow, Ui_MainWindow3):
-    def __init__ (self):
+class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
+    def __init__ (self, title=None, parent=None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
-        super().__init__()
+        super(Window3, self).__init__(parent)
+        self.parent = parent
+        self.info = None
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
+        self.setWindowTitle(title)
+        self.icon_done = (QtGui.QPixmap(path_icon_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.icon_not_done = (QtGui.QPixmap(path_icon_not_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
 
+        self.plainTextEdit_1.textChanged.connect(
+            lambda: self.check_empty_plain_text_edit(self.plainTextEdit_1, self.icon_tab1, 0))
+        self.plainTextEdit_2.textChanged.connect(
+            lambda: self.check_empty_plain_text_edit(self.plainTextEdit_2, self.icon_tab2, 1))
+        self.plainTextEdit_3.textChanged.connect(
+            lambda: self.check_empty_plain_text_edit(self.plainTextEdit_3, self.icon_tab3, 2))
+        self.plainTextEdit_4.textChanged.connect(
+            lambda: self.check_empty_plain_text_edit(self.plainTextEdit_4, self.icon_tab4, 3))
+        self.plainTextEdit_5.textChanged.connect(
+            lambda: self.check_empty_plain_text_edit(self.plainTextEdit_5, self.icon_tab5, 4))
 
-def main ():
+        self.back_pushButton.clicked.connect(self.back_to_window)
+        self.done_pushButton.clicked.connect(self.preview_window)
+        self.set_plain_text_edit(self.read_json_file_info())
+
+    def check_empty_plain_text_edit(self, obj_plainTextEdit, obj_icon_tab, idx):
+        if obj_plainTextEdit.toPlainText() != '':
+            obj_icon_tab.addPixmap(self.icon_done[0], self.icon_done[1], self.icon_done[2])
+            self.tabWidget.setTabIcon(idx, obj_icon_tab)
+        else:
+            obj_icon_tab.addPixmap(self.icon_not_done[0], self.icon_not_done[1], self.icon_not_done[2])
+            self.tabWidget.setTabIcon(idx, obj_icon_tab)
+
+    def get_info_from_plain_text_edit(self):
+        history_match = self.plainTextEdit_1.toPlainText()
+        railway_waterway = self.plainTextEdit_2.toPlainText()
+        economical_characteristic_road = self.plainTextEdit_3.toPlainText()
+        movement_characteristic = self.plainTextEdit_4.toPlainText()
+        area_conditions = self.plainTextEdit_5.toPlainText()
+        return {'history_match': history_match,
+                'railway_waterway': railway_waterway,
+                'economical_characteristic_road': economical_characteristic_road,
+                'movement_characteristic': movement_characteristic,
+                'area_conditions': area_conditions}
+
+    def set_plain_text_edit(self, data: dict):
+        self.plainTextEdit_1.setPlainText(data.get('history_match', None))
+        self.plainTextEdit_2.setPlainText(data.get('railway_waterway', None))
+        self.plainTextEdit_3.setPlainText(data.get('economical_characteristic_road', None))
+        self.plainTextEdit_4.setPlainText(data.get('movement_characteristic', None))
+        self.plainTextEdit_5.setPlainText(data.get('area_conditioins', None))
+
+    def back_to_window(self):
+        """
+        Закрытие окна
+        :return:
+        """
+        # ДОПИСАТЬ json_worker
+        JsonWorker.write_json_file_info(self.get_info_from_plain_text_edit() | self.parent.window().get_info_window2())
+        self.parent.show()
+        self.close()
+
+    def preview_window(self):
+        info_window2 = self.parent.get_info_window2()
+        info_window3 = self.get_info_from_plain_text_edit()
+        self.preview = Preview(self.windowTitle(), self)
+
+        data = {
+                    'name_road': self.windowTitle(),
+               } | info_window2 | info_window3
+        self.write_json_file_info(data)
+        self.preview.filling_templates(data)
+        self.preview.show()
+
+def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = Window3()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно

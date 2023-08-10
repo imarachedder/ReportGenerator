@@ -8,6 +8,7 @@ import sys
 from PyQt6 import QtCore, QtGui, QtWidgets
 from interface import window2
 from db import Query, databases
+from settings import path_icon_app
 
 
 class Ui_Connection_window(object):
@@ -15,15 +16,15 @@ class Ui_Connection_window(object):
         Connection_window.setObjectName("Connection_window")
         Connection_window.resize(400, 180)
         Connection_window.setMaximumSize(QtCore.QSize(400, 180))
-        icon = QtGui.QIcon.fromTheme("C:\\Users\\sibregion\\Desktop\\icons8-автомобиль-26.png")
+        icon = QtGui.QIcon.fromTheme(path_icon_app)
         Connection_window.setWindowIcon(icon)
-        self.centralwidget = QtWidgets.QWidget(parent = Connection_window)
+        self.centralwidget = QtWidgets.QWidget(parent=Connection_window)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.verticalLayout.setObjectName("verticalLayout")
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
-        self.database_label = QtWidgets.QLabel(parent = self.centralwidget)
+        self.database_label = QtWidgets.QLabel(parent=self.centralwidget)
         self.database_label.setStyleSheet("font: 75 14pt \"MS Shell Dlg 2\";")
         self.database_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.database_label.setObjectName("database_label")
@@ -31,18 +32,20 @@ class Ui_Connection_window(object):
 
         # СОЗДАЮТСЯ КОМБО-БОКСЫ ДЛЯ СПИСКА БД И ДОРОГ
         self.database_box = QtWidgets.QComboBox(parent=self.centralwidget)
-        self.database_box.addItems(databases())
-        self.database_box.activated.connect(self.get_name_db)
+        # self.database_box.addItems(databases())
+        # self.database_box.activated.connect(self.get_name_db)
         self.database_box.setObjectName("database_box")
 
-        self.road_box = QtWidgets.QComboBox(parent=self.centralwidget)
+        self.road_box = QtWidgets.QComboBox(parent=self.centralwidget) # комбо-бокс для списка доступных дорог
         self.road_box.setObjectName("road_box")
 
         self.gridLayout.addWidget(self.road_box, 3, 1, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Policy.Minimum,
                                            QtWidgets.QSizePolicy.Policy.Fixed)
         self.gridLayout.addItem(spacerItem, 2, 1, 1, 1)
+
         self.gridLayout.addWidget(self.database_box, 1, 1, 1, 1)
+
         self.road_label = QtWidgets.QLabel(parent=self.centralwidget)
         self.road_label.setStyleSheet("font: 75 14pt \"MS Shell Dlg 2\";")
         self.road_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -50,8 +53,9 @@ class Ui_Connection_window(object):
         self.gridLayout.addWidget(self.road_label, 3, 0, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout)
         self.connection_button = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.connection_button.setEnabled(False)
         self.connection_button.setObjectName("connection_button")
-        self.connection_button.clicked.connect(self.window2)
+        # self.connection_button.clicked.connect(self.window2)
         self.verticalLayout.addWidget(self.connection_button)
         Connection_window.setCentralWidget(self.centralwidget)
 
@@ -66,20 +70,27 @@ class Ui_Connection_window(object):
         self.connection_button.setText(_translate("Connection_window", "Соединиться"))
 
 
-
 class ConnectionApp(QtWidgets.QMainWindow, Ui_Connection_window):
     def __init__(self):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super().__init__()
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
+        self.road_box.currentIndexChanged.connect(self.enable_btw_connection)
+        self.connection_button.clicked.connect(self.window2_show)
+        self.database_box.addItems(databases())
+        self.database_box.activated.connect(self.get_name_db)
 
-    def window2(self):
+    def enable_btw_connection(self):
+        """ Включить кнопку соединения """
+        return self.connection_button.setEnabled(True)
+
+    def window2_show(self):
         """
         Подключение к Мейн окну
         :return:
         """
-        self.window2 = window2.Window2(self.get_name_road(), self.get_name_db())
+        self.window2 = window2.Window2(road_name=self.get_name_road(), database_name=self.get_name_db(), parent=self)
         self.window2.show()
         self.hide()
 
@@ -95,14 +106,15 @@ class ConnectionApp(QtWidgets.QMainWindow, Ui_Connection_window):
         return self.res_db
 
     def get_name_road(self):
-        self.road_name = self.road_box.currentText()
-        return self.road_name
+        return self.road_box.currentText()
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ConnectionApp()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
     app.exec()  # и запускаем приложение
+
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()

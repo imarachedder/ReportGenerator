@@ -4,6 +4,15 @@ import pandas as pd
 import pyodbc
 import sys
 
+# стоянки, парковки смотеть в проезжей части, счтиается количество
+# Опоры освещения и контактные сети, считается длина
+# воздушная коммуникация считается сумма длина
+# Остановки количество
+# ПСП считаются длина, сумма
+# ограждения, считаются сумма длин
+# Сигнальные столбики, шт.
+# Дорожные знаки, количество
+
 
 class Query:
     def __init__(self, database=None):
@@ -20,7 +29,6 @@ class Query:
                                                                                    'Trusted_Connection=yes;')
         self.db.setencoding('cp1251')
         self.cursor = self.db.cursor()  # возвращает значение стобец-строка в формате словаря ключ-значение
-
 
     def get_databases(self):
         request = "select name from sys.databases"
@@ -42,6 +50,52 @@ class Query:
             # print(row[1])
         print(self.road_names['Название'])
         return self.road_names['Название']
+
+    def get_tp_datas(self, name):
+        """ 07.08.2023 ревью кода """
+        """
+        Вытаскиваем данные по техническому паспорту из базы данных
+        :param name: 
+        :return: 
+        """
+        res = {'название дороги': f'{name}', }
+        request_for_items = "select Item_Name from Group_Description"
+        item_list = ['Ось дороги', 'Граница участка дороги', 'Километровые знаки', 'Остановка',
+                     'Опоры освещения и контактной сети', 'Проезжая часть']  # 'Граница участка дороги'
+        request = """
+                   select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
+                   Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
+                   Attribute.L1, Attribute.L2, dbo.CalcSquare(Image_Points) as Square
+                   from Road inner join Way on Road.ID_Road = Way.ID_Road
+                   inner join High on Way.ID_Way = High.ID_Way
+                   inner join Attribute on High.ID_High = Attribute.ID_High
+                   inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                   inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                   inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                   where Road.Name = ? 
+
+               """  # and Group_Description.Item_Name = ?
+        # for i, item in enumerate(item_list):
+        self.cursor.execute(request, name)  # item
+        for param in self.cursor.fetchall():
+
+            print(param)
+
+            if param[6] in res:
+                if param[7] in res.get(param[6]):
+                    res.get(param[6]).get(param[7]).append(param[8::])
+                else:
+                    res.get(param[6]).update({param[7]: [param[8::]]})
+            else:
+                res.update({param[6]: {param[7]: [param[8::]]}})
+
+        # сортирует в словаре координаты по возрастанию
+        for _, value in res.items():
+            if type(value) == dict:
+                for val in value.values():
+                    val.sort(key=lambda x: x[1])
+
+        return res
 
     def get_dad_datas(self, name):
         """ 29.06.2023 """
@@ -107,6 +161,7 @@ def databases():
     db = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server}; Server=SIBREGION-SRV2; Trusted_Connection=yes;')
     print()
     db_list = [i[0] for i in db.cursor().execute(request).fetchall()[4:]]
+    print(db_list)
 
     db.close()
     return db_list

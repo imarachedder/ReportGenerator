@@ -4,17 +4,15 @@
 
 abstract class AbstractList
 
-User -> DB: Authentication Request
+User --> DB: Authentication Request
 DB --> User: Authentication Response
 
-AbstractList <|-- Query
-DB <|== AbstractList
+AbstractList <|--- Query
+DB <|-- AbstractList
 
 class Query {
     Object [] elementData
     size()
-
 }
-
 
 @enduml

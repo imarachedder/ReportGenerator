@@ -1,10 +1,0 @@
-
-xpython:S116"URename this field "webEngineView" to match the regular expression ^[_a-z][_a-z0-9]*$.(Δύÿÿÿÿ8ι‘•1
-ypython:S116"VRename this field "verticalLayout" to match the regular expression ^[_a-z][_a-z0-9]*$.(ρϋ¥Ψψÿÿÿÿ8ι‘•1
-tpython:S116"QRename this field "buttonBox" to match the regular expression ^[_a-z][_a-z0-9]*$.(έ·πςόÿÿÿÿ8ι‘•1
-‰python:S101
-"kRename class "Ui_Preview_window" to match the regular expression ^_?([A-Z_][a-zA-Z0-9]*|[a-z_][a-z0-9_]*)$.(ω°ƒο8ι‘•1
-xpython:S117"ZRename this parameter "Preview_window" to match the regular expression ^[_a-z][a-z0-9_]*$.(•¬σ8ι‘•1
-ipython:S100"KRename method "setupUi" to match the regular expression ^[a-z_][a-z0-9_]*$.(•¬σ8ι‘•1
-upython:S117""RRename this parameter "Dialog" to match the regular expression ^[_a-z][a-z0-9_]*$.(ΑλΆθώÿÿÿÿ8ι‘•1
-tpython:S100""QRename method "retranslateUi" to match the regular expression ^[a-z_][a-z0-9_]*$.(ΑλΆθώÿÿÿÿ8 ι‘•1
