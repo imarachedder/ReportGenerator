@@ -166,7 +166,7 @@ class Ui_MainWindow3(object):
                                   _translate("MainWindow3", "Связь дороги с железнодорожными и водными путями"))
         self.plainTextEdit_3.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3),
-                                  _translate("MainWindow3", "Экономическое и административное занчение дороги"))
+                                  _translate("MainWindow3", "Экономическое и административное значение дороги"))
         self.plainTextEdit_4.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4),
                                   _translate("MainWindow3", "Характеристика движения"))
@@ -178,7 +178,7 @@ class Ui_MainWindow3(object):
 
 
 class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
-    def __init__ (self, title=None, parent=None):
+    def __init__ (self, title=None, parent=None, data = None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Window3, self).__init__(parent)
@@ -186,8 +186,10 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.info = None
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
+        self.result_data = data
         self.icon_done = (QtGui.QPixmap(path_icon_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.icon_not_done = (QtGui.QPixmap(path_icon_not_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+
 
         self.plainTextEdit_1.textChanged.connect(
             lambda: self.check_empty_plain_text_edit(self.plainTextEdit_1, self.icon_tab1, 0))
@@ -244,14 +246,16 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
     def preview_window(self):
         info_window2 = self.parent.get_info_window2()
         info_window3 = self.get_info_from_plain_text_edit()
-        self.preview = Preview(self.windowTitle(), self)
 
         data = {
                     'name_road': self.windowTitle(),
-               } | info_window2 | info_window3
+               } | info_window2 | info_window3 | self.result_data
+        self.preview = Preview(self.windowTitle(), parent = self, data=data)
         self.write_json_file_info(data)
         self.preview.filling_templates(data)
+        # self.preview.write_excel(data)
         self.preview.show()
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication

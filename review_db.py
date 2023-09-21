@@ -140,10 +140,25 @@ def databases():
     return db_list
 
 
+def test(data):
+    list_start_end_road = data.get('Ось дороги', {}).get('Начало трассы', [])
+    list_start_end_km_sign = data.get('Километровые знаки').get('Значение в прямом направлении')
+    l = {}
+    # min(enumerate(a), key = lambda x: abs(x[1] - 11.5))
+    for num_road in list_start_end_road:
+        for num_sign in list_start_end_km_sign:
+            if -1000 < num_road[1] - num_sign[1] < 1000:
+                print(num_road, 'start',  num_sign)
+                #l['start'] += (num_road[1] - num_sign[1])
+                if -1000 < num_road[2] - num_sign[2] < 1000:
+                    print(num_road, 'end', num_sign)
+
 def main():
     df = Query(database="Testovaya")
     # df.get_dad_datas(name='Adigeya-Maykop')
-    df.get_tp_datas(road_name="P-254")
+    res = df.get_tp_datas(road_name="P-254")
+    print(res)
+    test(res)
     # print(df.get_dad_datas(name='Adigeya-Maykop'))
 
 

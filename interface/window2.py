@@ -12,15 +12,16 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox
 from interface.json_worker import JsonWorker
 from interface.window3 import Window3
+from write_excel_description import WriterExcelTP
 
 
 class Ui_MainWindow2(object):
-    def setupUi (self, MainWindow2):
+    def setupUi(self, MainWindow2):
         MainWindow2.setObjectName("MainWindow2")
         MainWindow2.resize(520, 380)
         MainWindow2.setMinimumSize(QtCore.QSize(520, 380))
         MainWindow2.setMaximumSize(QtCore.QSize(520, 380))
-        self.centralwidget = QtWidgets.QWidget(parent = MainWindow2)
+        self.centralwidget = QtWidgets.QWidget(parent=MainWindow2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
                                            QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -31,7 +32,7 @@ class Ui_MainWindow2(object):
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.label = QtWidgets.QLabel(parent = self.centralwidget)
+        self.label = QtWidgets.QLabel(parent=self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -229,7 +230,7 @@ class Ui_MainWindow2(object):
         MainWindow2.setTabOrder(self.year_lineEdit, self.cance_pushButton)
         MainWindow2.setTabOrder(self.cance_pushButton, self.next_pushButton)
 
-    def retranslateUi (self, MainWindow2):
+    def retranslateUi(self, MainWindow2):
         _translate = QtCore.QCoreApplication.translate
         MainWindow2.setWindowTitle(_translate("MainWindow2", "\"Название дороги\""))
         self.label.setText(_translate("MainWindow2", "Тип документа"))
@@ -264,12 +265,12 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.path_dir = r'C:\Users\sibregion\Desktop'
 
-        # self.next_pushButton.clicked.connect(
-        #     self.get_info_window2)  # при нажатии кнопки далее выводится информация с текущего окна
-        # self.next_pushButton.clicked.connect(
-        #     self.check_tip_document)  # при нажатии кнопки далее проверяется выбран ли тип документ
-        self.tp_checkBox.toggled['bool'].connect(self.tp_checkbox_true)     # проверка кнопки ТП
-        self.dad_checkBox.toggled['bool'].connect(self.dad_checkbox_true)   # проверка кнопки диагностика
+        self.next_pushButton.clicked.connect(
+            self.get_info_window2)  # при нажатии кнопки далее выводится информация с текущего окна
+        self.next_pushButton.clicked.connect(
+            self.check_tip_document)  # при нажатии кнопки далее проверяется выбран ли тип документ
+        # self.tp_checkBox.toggled['bool'].connect(self.tp_checkbox_true)     # проверка кнопки ТП
+        # self.dad_checkBox.toggled['bool'].connect(self.dad_checkbox_true)  # проверка кнопки диагностика
         self.get_path_dir_pushButton.clicked.connect(self.set_path_dir)
         self.cance_pushButton.clicked.connect(self.back_to_win3)
         self.contractor_lineEdit.setText('ООО "Сибирь Регион"')  # значение по умолчанию
@@ -279,10 +280,10 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.count_region_lineEdit.setText('1')  # значение по умолчанию
         # self.set_plain_text_edit(self.read_json_file_info())  # заполнить поля в текущем окне из json файла
         self.setWindowTitle(str(self.title))
-        self.next_pushButton.clicked.connect((self.window3_show))
-
+        # self.next_pushButton.clicked.connect((self.window3_show))
 
     def set_plain_text_edit(self, data: dict):
+
         """
         Устанавливает значение client, fio_client, position_client из словаря
         :param data:
@@ -365,7 +366,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
 
             msg.exec()
 
-        elif self.tp_checkBox.isChecked():
+        elif self.tp_checkBox.isChecked():      # иначе если выбран тип документа: технический паспорт
             if not self.road_city_radioButton.isChecked() and not self.roads_automobile_radioButton.isChecked():
                 msg = QMessageBox()
                 # setting message for Message Box
@@ -374,27 +375,43 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                 msg.setWindowTitle("Предупреждение")
                 msg.exec()
             else:
-                self.window3_show()
-                # print(self.db.get_tp_datas(self.title))
-        elif self.dad_checkBox.isChecked():
-            print('заполняю диагностику')
+                try:
+                    if self.road_city_radioButton.isChecked():
+                        self.request = db.Query(self.database_name)
+                        self.result_data = self.request.get_tp_datas(self.title) # записываем результат в переменную
+                        print(type(self.result_data))
+                        print("Сбор данных по городской дороге успешно выполнен!")
+                    elif self.roads_automobile_radioButton.isChecked():
+                        self.request = db.Query(self.database_name)
+                        self.result_data = self.request.get_tp_datas(self.title)
+                        print("Сбор данных по автомобильной дороге успешно выполнен!")
+                    self.window3_show()
+                except Exception as e:
+                    raise 'Не удалось подключиться к базе данных. Ошибка {e}'
 
-            #report = WriterExcelDAD(self.db.get_dad_datas(self.title))
+                # print(self.db.get_tp_datas(self.title))
+        elif self.dad_checkBox.isChecked():     # иначе если выбран тип документа: диагностика
+            self.request = db.Query(self.database_name)
+            self.request.get_dad_datas(self.title)
+            print('заполняю диагностику')
+            # report = WriterExcelDAD(self.db.get_dad_datas(self.title))
             # print(self.db.get_dad_datas(self.title))
-            pass
+
         elif self.podd_checkBox.isChecked():
             pass
 
     def window3_show(self):
         """ Переход в окно 3"""
-        self.window3 = Window3(title=self.title, parent=self)
+        self.window3 = Window3(title=self.title, parent=self, data = self.result_data)
         self.window3.show()
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = Window2()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
     app.exec()  # и запускаем приложение
+
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()

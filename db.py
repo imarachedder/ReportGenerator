@@ -37,10 +37,10 @@ class Query:
         return self.db_list
 
     def set_road_name(self):
-        '''
+        """
             Вытаскивает из базы столбцы с названиями а/д
         :return: self.road_names -> dict
-        '''
+        """
         self.cursor.execute("SELECT ID_Road, Name FROM Road")
         self.road_names = {'№': [], 'ID_Road': [], 'Название': []}
         for row in self.cursor.fetchall():
@@ -60,8 +60,8 @@ class Query:
         """
         res = {'название дороги': f'{name}', }
         request_for_items = "select Item_Name from Group_Description"
-        item_list = ['Ось дороги', 'Граница участка дороги', 'Километровые знаки', 'Остановка',
-                     'Опоры освещения и контактной сети', 'Проезжая часть']  # 'Граница участка дороги'
+        # item_list = ['Ось дороги', 'Граница участка дороги', 'Километровые знаки', 'Остановка',
+        #              'Опоры освещения и контактной сети', 'Проезжая часть']  # 'Граница участка дороги'
         request = """
                    select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
                    Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
@@ -76,24 +76,45 @@ class Query:
 
                """  # and Group_Description.Item_Name = ?
         # for i, item in enumerate(item_list):
+
+
         self.cursor.execute(request, name)  # item
+        # def generator():
+        #     for param in self.cursor.fetchall():
+        #         yield param
+        #
+        # gen = generator()
+        # for i in gen:
+        #     print(i)
+
         for param in self.cursor.fetchall():
+            # RES =  {НАЗВАНИЕ: "FWFW", {УЧАСТОК: {KEY:[(), ()]}}}
+            # print(param)
+            if param[3] in res:
 
-            print(param)
-
-            if param[6] in res:
-                if param[7] in res.get(param[6]):
-                    res.get(param[6]).get(param[7]).append(param[8::])
+                if param[6] in res.get(param[3]):
+                    if param[7] in res.get(param[3]).get(param[6]):
+                        res.get(param[3]).get(param[6]).get(param[7]).append(param[8::])
+                    else:
+                        res.get(param[3]).get(param[6]).update({param[7]: [param[8::]]})
                 else:
-                    res.get(param[6]).update({param[7]: [param[8::]]})
+                    res.get(param[3]).update({param[6]: {param[7]: [param[8::]]}})
             else:
-                res.update({param[6]: {param[7]: [param[8::]]}})
+                res.update({param[3]: {param[6]: {param[7]: [param[8::]]}}})
 
         # сортирует в словаре координаты по возрастанию
         for _, value in res.items():
+            # print( type(value), value)
             if type(value) == dict:
-                for val in value.values():
-                    val.sort(key=lambda x: x[1])
+                for i, val in value.items():
+                    if type(val) == dict:
+                        for elem in val.values():
+                            elem.sort(key= lambda x: x[1])
+
+
+            # if type(value) == dict:
+            #     for val in value.values():
+            #         val.sort(key=lambda x: x[1])
 
         return res
 
@@ -161,9 +182,28 @@ def databases():
     db = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server}; Server=SIBREGION-SRV2; Trusted_Connection=yes;')
     print()
     db_list = [i[0] for i in db.cursor().execute(request).fetchall()[4:]]
-    print(db_list)
+    # print(db_list)
 
     db.close()
     return db_list
 
-# databases()
+def main ():
+    db = Query('OMSK_CITY_2023')  # FKU_VOLGO_VYATSK_1
+    list_roads = databases()
+    # print(list_roads)
+    # data = db.get_dad_datas('P-254')  # Р-176 "Вятка" Чебоксары - Йошкар-Ола - Киров - Сыктывкар
+    data_test = db.get_tp_datas('ул. Интернациональная')
+    # print(data_test)
+
+
+    # test(data)
+    # print(data)
+    db.close_db()
+    # with open(rf'{data.get("название дороги","отчет")}.txt', 'w', encoding = 'utf-8') as file:
+    #     for key, val in data.items():
+    #         file.write(f'{key}:{val}\n')
+
+
+if __name__ == '__main__':
+    main()
+

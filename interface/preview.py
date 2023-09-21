@@ -41,20 +41,26 @@ class Ui_Preview_window(object):
 
 class Preview(QtWidgets.QDialog, Ui_Preview_window):
 
-    def __init__ (self, title=None, parent=None):
+    def __init__ (self, title=None, parent=None, data=None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Preview, self).__init__(parent)
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
-        self.buttonBox.accepted.connect(self.write_excel)
+        # self.data = data
+        # print(self.data)
+        self.title = title
+        self.buttonBox.accepted.connect(lambda : self.write_excel(data))
 
     def write_excel (self, data=None):
         if data is None:
             data = {}
         if self.parent().parent.tp_checkBox.isChecked():
             print('заполняю тех паспорт')
-            # report = WriterExcelTP(data)
+
+            report = WriterExcelTP(data)
+            report.save_file()
+
         print('сохранил файл')
         # report.save_file()
 
