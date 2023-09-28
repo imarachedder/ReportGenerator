@@ -40,7 +40,7 @@ class Ui_Preview_window(object):
 
 
 class Preview(QtWidgets.QDialog, Ui_Preview_window):
-
+    # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
     def __init__ (self, title=None, parent=None, data=None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py

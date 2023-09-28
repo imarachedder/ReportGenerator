@@ -24,7 +24,7 @@ class WriterExcel:
        #self.img = Image(f"{self.path_dir}\схема.png")
         self.data = data
         self.page_number = 2
-        self.data_interface = {'year': 2023}
+        self.data_interface = {'year': 2023, 'count_region': 1}
 
     def save_file (self):
         # сохранить файл
@@ -41,11 +41,17 @@ class WriterExcel:
 class WriterExcelTP(WriterExcel):
     def __init__ (self, data: dict = None):
         super().__init__(data)
-        # self.write_titular(data)
-        # self.write_6(data)
-        # self.write_9(data)
+        self.write_titular(data)
+        self.write_6(data)
+        self.write_7()
+        self.write_9(data)
         # self.write_10(data)
         self.write_11()
+        self.write_12()
+        self.write_13()
+        self.write_14()
+        # self.write_17()
+        self.write_18()
         #convert_visio2svg(self.path_dir)
 
     def write_titular (self, data):
@@ -88,12 +94,12 @@ class WriterExcelTP(WriterExcel):
         # 2.1 Наименование дороги: name road
         ws["O5"].value = self.data.get('название дороги')
 
-        # for i in range(self.data.get('count_region', 1)):
+        # for i in range(self.data_interface.get('count_region', 1)):
         #     ws[f"L1{i}"].value = self.data.get('участки', 'None')[i]  # 2.2 Участок дороги: участки
-        self.data['count_region'] = 2
+
         # 2.2 Участок дороги 1, 2 и т.д.
-        if self.data.get('count_region') > 1:
-            for i in range(0, self.data.get("count_region", 0)):
+        if self.data_interface.get('count_region') > 1:
+            for i in range(0, self.data_interface.get("count_region", 0)):
                 if i == 0:
                     ws[f'B1{i}'].value = f'2.2  Участок дороги {n}'
                 else:
@@ -106,56 +112,57 @@ class WriterExcelTP(WriterExcel):
             n = 1
         else:
             # ws["S14"].value = self.data.get('протяженность дороги', None)  # 2.3 Протяженность дороги: протяженность
-            ws["L10"].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы')[0][1]} + " \
-                                 f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы')[0][2]} м."
+            ws["L10"].value = f"{self.data.get(f'весь участок').get('Ось дороги', None).get('Начало трассы')[0][1]} + " \
+                                 f"{self.data.get(f'весь участок').get('Ось дороги', None).get('Начало трассы')[0][2]} м."
 
 
         # 2.3 Суммарна протяженность по участку или участкам
-        if self.data.get("count_region") > 1:
+        if self.data_interface.get("count_region") > 1:
             res = 0
-            for i in range(0, self.data.get("count_region", 0)):
+            for i in range(0, self.data_interface.get("count_region", 0)):
                 res += int(self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][2])
                 n += 1
             n = 1
             ws["S14"].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы')[0][1]} + {res} м."
         else:
-            ws["S14"].value = self.data.get(f'участок {n}').get('Ось дороги', None)['Начало трассы'][0][2]
+            ws["S14"].value = self.data.get(f'весь участок').get('Ось дороги', None)['Начало трассы'][0][2]
 
         # заполняет таблицу 2.3 Протяженность дороги
-        for i in range(2, (self.data.get('count_region') * 2) + 1, 2):
-            # print(self.data.get('count_region') * 2)
-            ws[f'B2{i - 1}'].value = f'Участок {n}'
-            # print(self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[4%self.data.get('count_region')][1])
-            if n % 2 != 0:
-                ws[f'B2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data.get('count_region')][1]
-                ws[f'F2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data.get('count_region') ][2]
-                ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region')][1]} + " \
-                                      f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region')][2]} м."
-            else:
-                ws[f'B2{i}'].value = \
-                self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region') -1][1]
-                ws[f'F2{i}'].value = \
-                self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region') -1][2]
-                ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region') -1][1]} + " \
-                                     f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data.get('count_region') -1][2]} м."
+        if self.data_interface.get('count_region') > 1:
+            for i in range(2, (self.data_interface.get('count_region') * 2) + 1, 2):
+                # print(self.data.get('count_region') * 2)
+                ws[f'B2{i - 1}'].value = f'Участок {n}'
+                # print(self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[4%self.data.get('count_region')][1])
+                if n % 2 != 0:
+                    ws[f'B2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data_interface.get('count_region')][1]
+                    ws[f'F2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data_interface.get('count_region') ][2]
+                    ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region')][1]} + " \
+                                          f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region')][2]} м."
+                else:
+                    ws[f'B2{i}'].value = \
+                    self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][1]
+                    ws[f'F2{i}'].value = \
+                    self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][2]
+                    ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][1]} + " \
+                                         f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][2]} м."
 
-            # ПОКА ПРОПУСКАЕМ ЭТОТ ПУНКТ
-            ws[f'N2{i}'].value = self.data.get('подъездов', None)
-            ws[f'R2{i}'].value = self.data.get('дороги вместе с подъездами', None)
-            ws[f'V2{i}'].value = self.data.get('обслуживаемых дорожной организацией', None)
-            ws[f'AB2{i}'].value = self.data.get('находящихся в ведении города', None)
-            ws[f'AG2{i}'].value = self.data.get('совмещенных', None)
-            n += 1
-        n = 1
+                # ПОКА ПРОПУСКАЕМ ЭТОТ ПУНКТ
+                ws[f'N2{i}'].value = self.data.get('подъездов', None)
+                ws[f'R2{i}'].value = self.data.get('дороги вместе с подъездами', None)
+                ws[f'V2{i}'].value = self.data.get('обслуживаемых дорожной организацией', None)
+                ws[f'AB2{i}'].value = self.data.get('находящихся в ведении города', None)
+                ws[f'AG2{i}'].value = self.data.get('совмещенных', None)
+                n += 1
+            n = 1
 
         # заполняет таблицу 2.4 Наименование подъездов (обходов) и их протяженность
         ws["B37"].value = self.data.get('подъезды', None)
 
         # заполняет таблицу 2.5 Категория дороги (участка), подъездов
-        if self.data.get("count_region") > 1:
+        if self.data_interface.get("count_region") > 1:
             counter = 1
             ws["AL10"].value = self.data.get('название дороги')
-            for i in range(0, self.data.get("count_region")):
+            for i in range(0, self.data_interface.get("count_region")):
                 # ДОПИСАТЬ КАТЕГОРИИ
                 ws[rf'AW1{counter}'].value = f"{0} + {self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][1]}"
                 ws[rf'BA1{counter}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][1]} + " \
@@ -168,8 +175,55 @@ class WriterExcelTP(WriterExcel):
         ws["AL33"].value = "Историческая справка"
         # ws["AL33"].value = self.data.get('history_match', None)
 
-    def write_7(self, data):
-        pass
+    def write_7(self):
+        # 2.7
+        ws = self.wb['7']
+        counter_distr_soder = 15
+        for k1, v1 in self.data.items():
+            if k1 == 'название дороги':
+                continue
+            for idx, v2 in enumerate(v1.get('Дорожная организация', {}).get('Наименование', [])):
+                ws[f'B{counter_distr_soder}'] = self.data_interface.get('year', '')
+                ws[f'E{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Наименование', [])[idx][
+                    0] if v1.get('Дорожная организация', {}).get('Наименование', []) else ''
+                ws[f'l{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Адрес', [])[idx][0] if v1.get(
+                    'Дорожная организация', {}).get('Адрес', []) else ''
+                ws[f'P{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Город', [])[idx][0] if v1.get(
+                    'Дорожная организация', {}).get('Город', []) else ''
+                ws[f'V{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][
+                    0] if v1.get(
+                    'Дорожная организация', {}).get('Начало по оси', []) else ''
+                ws[f'Y{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][
+                    0] if v1.get(
+                    'Дорожная организация', {}).get('Конец  по оси', []) else ''
+                start = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][0].split('+')
+                end = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][0].split('+')
+
+                ws[
+                    f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
+                counter_distr_soder += 1
+        # 2.8
+
+        column_tuple = ('AX', 'BA', 'BD', 'BJ', 'BM')
+
+        counter = 15
+        for k1, v1 in self.data.items():
+            if k1 == 'название дороги':
+                continue
+            tuple_name = v1.get('Населенный пункт', {}).get('Наименование', [])
+            for idx, name in enumerate(tuple_name):
+                # находим следующий километровый
+                if name == tuple_name[-1]:
+                    next_name = tuple_name[-1]
+                elif name == tuple_name[0]:
+                    next_name = tuple_name[0]
+                else:
+                    next_name = tuple_name[idx % len(tuple_name) + 1]
+
+                ws[f'{column_tuple[idx]}4'] = name[0]
+                ws[f'AR{counter}'] = name[0]
+                ws[f'{column_tuple[idx]}{counter}'] = next_name[2] - name[2]
+                counter += 1
 
     def write_8(self, data):
         """
@@ -203,11 +257,11 @@ class WriterExcelTP(WriterExcel):
             result = res - int(self.data.get(f'участок {i+1}').get('Ширина проезжей части', None).get('Ширина ПЧ')[j-1][1])
             if j - 1 == 0:
                 result += int(self.data.get(f'участок {i + 1}').get('Ширина проезжей части').get('Ширина ПЧ')[j-1][1])
-            print(f"do {res}",
-                  self.data.get(f'участок {i + 1}').get('Ширина проезжей части', None).get('Ширина ПЧ')[
-                      j - 1][0],
-                  int(self.data.get(f'участок {i + 1}').get('Ширина проезжей части').get('Ширина ПЧ')[
-                          j - 1][1]), result, res)
+            # print(f"do {res}",
+            #       self.data.get(f'участок {i + 1}').get('Ширина проезжей части', None).get('Ширина ПЧ')[
+            #           j - 1][0],
+            #       int(self.data.get(f'участок {i + 1}').get('Ширина проезжей части').get('Ширина ПЧ')[
+            #               j - 1][1]), result, res)
             return result
 
         # Счетчик
@@ -215,16 +269,16 @@ class WriterExcelTP(WriterExcel):
 
         ws = self.wb['9']
         # 4.1 Топографические условия района проложения автомобильной дороги
-        ws['B7'] = self.data.get('area_conditioins')
+        # ws['B7'] = self.data.get('area_conditioins')
         # 4.2 Ширина земляного полотна
         # 4.3 Характеристика проезжей части
         # 4.3.1 Ширина проезжей части
-        self.data['count_region'] = 2
 
-        if self.data.get('count_region') >= 1:
+
+        if self.data_interface.get('count_region') > 1:
 
             # Цикл по количеству учасков
-            for i in range(0, self.data.get('count_region')):
+            for i in range(0, self.data_interface.get('count_region')):
                 # Создаем переменные для ячеек в таблице 4.3.1 Ширина проезжей части
                 res2, res3, res4, res5, res6, res7, res8, res9, res10, res11, res12 = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
@@ -267,30 +321,143 @@ class WriterExcelTP(WriterExcel):
                     ws[f'BM1{n+2}'].value = round(res11 / 1000, 3)
                 n += 2
 
+    def count_coating (self, v):
+
+        """
+        Расчет протяженностей типов покрытий
+        :param data:
+        :return:
+        """
+        capital = {'цементобетон': 0,
+                   'асфальтобетон': 0,
+                   'щебень/гравий, обр.вяжущий': 0,
+                   'щебень/гравий': 0,
+                   'грунт': 0,
+                   'ж/б плиты': 0,
+                   'булыжник': 0,
+                   'брусчатка': 0,
+                   'тротуарная плитка': 0}
+        lightweight = {
+            'асфальтобетонные': 0,
+            'органоминеральные': 0,
+            'щебеночные (гравийные), обработанные вяжущим': 0,
+            'цементобетон': 0
+        }
+        transition = {
+            'Щебеночно - гравийно - песчаные': 0,
+            'Грунт и малопрочные каменные материалы, укрепленные вяжущим': 0,
+            'Грунт, укрепленный различными вяжущими и местными материалами': 0,
+            'Булыжный и колотый камень(мостовые)': 0
+        }
+        lower = {'Грунт профилированный': 0,
+                 'Грунт естественный': 0}
+        type_of_coating = {'Капитальный': capital,
+                           'Облегченный': lightweight,
+                           'Переходный': transition,
+                           'Низший': lower
+                           }
+
+        tuple_tip = v.get('Граница участка дороги', None).get('тип дорожной одежды', None)
+        tuple_variant = v.get('Граница участка дороги', None).get('вид покрытия', None)
+        for idx, tip in enumerate(tuple_tip):
+            # находим следующий километровый
+            if tip == tuple_tip[-1]:
+                next_tip = tuple_tip[-1]
+            elif tip == tuple_tip[0]:
+                next_tip = tuple_tip[1]
+            else:
+                next_tip = tuple_tip[idx % len(tuple_tip) + 1]
+            type_of_coating[tip[0]][tuple_variant[idx][0]] += next_tip[1] - tip[1]
+        return type_of_coating
+
     def write_10(self, data):
         # 29.08.2023 разобраться с заполнением данных
-        types_of_coating = {'Капитальные': ['Цементобетонные монолитные', 'Железобетонные монолитные',
-                                            'Железобетонные сборные', 'Армобетонные монолитные',
-                                            'Армобетонные сборные', 'Асфальтобетонные', 'Щебеночно-мастичные'],
-                            'Облегченные': ['Асфальтобетонные', 'Органоминеральные',
-                                            'Щебеночные (гравийные), обработанные вяжущим'],
-                            'Переходные': ['Щебеночно-гравийно-песчанные',
-                                           'Грунт и малопрочные каменные материалы, укрепленные вяжущим',
-                                           'Грунт, укрепленный различными вяжущими и местными материалами',
-                                           'Булыжный и колотый камень (мостовые)'],
-                            'Низший': ['Грунт профилированный', 'Грунт естественный']}
-        print(self.data.get('участок 1').get('Граница участка дороги').get())
-        n = 1
         ws = self.wb['10']
-        self.data['count_region'] = 2
-        if self.data.get('count_region') >= 1:
-            for i in range(0, self.data.get('count_region')):
-                if i == 0:
-                    ws['AF4'].value = f'Участок {n}\n 2023 г.'
-                elif i == 1:
-                    ws['AL4'].value = f'Участок {n}\n 2023 г.'
-                n += 1
-            print(self.data.get('участок 1').get('Проезжая часть'))
+        column_tuple = ['AF', 'AL', 'AR', 'AX', 'BD', 'BJ']
+        counter = 0
+        # в последующем убрать
+
+        print(self.data.keys())
+        for k1, v1 in self.data.items():
+            if k1 == 'название дороги':
+                continue
+            else:
+                column = column_tuple[counter]
+                if len(self.data) > 2:
+                    ws[f'{column}4'] = f'Участок {counter + 1} \n {self.data_interface.get("year", None)} г.'
+                else:
+                    ws[f'{column}4'] = f'{self.data_interface.get("year", None)}'
+                result = self.count_coating(v1)
+                print(result)
+
+                # КАПИТАЛЬНЫЕ
+                ws[f'{column}7'] = ''
+                ws[f'{column}8'] = result.get('Капитальный').get('цементобетон') / 1000 if result.get('Капитальный').get('цементобетон') > 0 else ''
+                ws[f'{column}9'] = result.get('Капитальный').get('ж/б плиты') / 1000 if result.get('Капитальный').get('ж/б плиты') > 0 else ''
+                ws[f'{column}10'] = result.get('Капитальный').get('цементобетон') / 1000 if result.get('Капитальный').get('цементобетон') > 0 else ''
+                ws[f'{column}11'] = result.get('Капитальный').get('цементобетон') / 1000 if result.get('Капитальный').get('цементобетон') > 0 else ''
+                ws[f'{column}12'] = result.get('Капитальный').get('цементобетон') / 1000 if result.get('Капитальный').get('цементобетон') > 0 else ''
+                ws[f'{column}13'] = result.get('Капитальный').get('асфальтобетон') / 1000 if result.get('Капитальный').get('асфальтобетон') > 0 else ''
+                ws[f'{column}14'] = result.get('Капитальный').get('щебень/гравий, обр.вяжущий') / 1000 if result.get('Капитальный').get('щебень/гравий, обр.вяжущий') > 0 else ''
+                ws[f'{column}15'] = result.get('Капитальный').get('тротуарная плитка') / 1000 if result.get('Капитальный').get('тротуарная плитка') > 0 else ''
+                ws['B15'] = 'Тротуарная плитка'
+
+                # ОБЛЕГЧЕННЫЕ
+                ws[f'{column}19'] = result.get('Облегченный').get('асфальтобетонные') / 1000\
+                    if result.get('Облегченный').get('асфальтобетонные') > 0 else ''
+                ws[f'{column}20'] = result.get('Облегченный').get('органоминеральные') / 1000\
+                    if result.get('Облегченный').get('органоминеральные') > 0 else ''
+                ws[f'{column}21'] = result.get('Облегченный').get('щебеночные (гравийные), обработанные вяжущим') / 1000\
+                    if result.get('Облегченный').get('щебеночные (гравийные), обработанные вяжущим') > 0 else ''
+                ws[f'{column}22'] = result.get('Облегченный').get('цементобетон') / 1000\
+                    if result.get('Облегченный').get('цементобетон') > 0 else ''
+                ws[f'B22'] = 'Цементобетонные'
+
+                # ПЕРЕХОДНЫЕ
+                ws[f'{column}26'] = result.get('Переходный').get('Щебеночно - гравийно - песчаные') / 1000\
+                    if result.get('Переходный').get('Щебеночно - гравийно - песчаные') > 0 else ''
+                ws[f'{column}27'] = result.get('Переходный').get('Грунт и малопрочные каменные материалы, укрепленные вяжущим') / 1000 \
+                    if result.get('Переходный').get('Грунт и малопрочные каменные материалы, укрепленные вяжущим') > 0 else ''
+                ws[f'{column}28'] = result.get('Переходный').get('Грунт, укрепленный различными вяжущими и местными материалами') / 1000 \
+                    if result.get('Переходный').get('Грунт, укрепленный различными вяжущими и местными материалами') > 0 else ''
+                ws[f'{column}29'] = result.get('Переходный').get('Булыжный и колотый камень(мостовые)') / 1000 \
+                    if result.get('Переходный').get('Булыжный и колотый камень(мостовые)') > 0 else ''
+
+                # НИЗШИЕ
+                ws[f'{column}34'] = result.get('Низший').get('Грунт профилированный') / 1000\
+                    if result.get('Низший').get('Грунт профилированный') > 0 else ''
+                ws[f'{column}35'] = result.get('Низший').get('Грунт естественный') / 1000 \
+                    if result.get('Низший').get('Грунт естественный') > 0 else ''
+
+
+            counter += 1
+        else:
+            if len(self.data) > 2:
+                column = column_tuple[counter]
+                ws[f'{column}4'] = 'Итог'
+
+                ws[f'{column}8'] = f'=SUM({column_tuple[0]}8:{column_tuple[counter - 1]}8)'
+                ws[f'{column}9'] = f'=SUM({column_tuple[0]}9:{column_tuple[counter - 1]}9)'
+                ws[f'{column}10'] = f'=SUM({column_tuple[0]}10:{column_tuple[counter - 1]}10)'
+                ws[f'{column}11'] = f'=SUM({column_tuple[0]}11:{column_tuple[counter - 1]}11)'
+                ws[f'{column}12'] = f'=SUM({column_tuple[0]}12:{column_tuple[counter - 1]}12)'
+                ws[f'{column}13'] = f'=SUM({column_tuple[0]}13:{column_tuple[counter - 1]}13)'
+                ws[f'{column}14'] = f'=SUM({column_tuple[0]}14:{column_tuple[counter - 1]}14)'
+                ws[f'{column}15'] = f'=SUM({column_tuple[0]}15:{column_tuple[counter - 1]}15)'
+
+                ws[f'{column}19'] = f'=SUM({column_tuple[0]}19:{column_tuple[counter - 1]}19)'
+                ws[f'{column}20'] = f'=SUM({column_tuple[0]}20:{column_tuple[counter - 1]}20)'
+                ws[f'{column}21'] = f'=SUM({column_tuple[0]}21:{column_tuple[counter - 1]}21)'
+                ws[f'{column}22'] = f'=SUM({column_tuple[0]}22:{column_tuple[counter - 1]}22)'
+
+                ws[f'{column}26'] = f'=SUM({column_tuple[0]}26:{column_tuple[counter - 1]}26)'
+                ws[f'{column}27'] = f'=SUM({column_tuple[0]}27:{column_tuple[counter - 1]}27)'
+                ws[f'{column}28'] = f'=SUM({column_tuple[0]}28:{column_tuple[counter - 1]}28)'
+                ws[f'{column}29'] = f'=SUM({column_tuple[0]}29:{column_tuple[counter - 1]}29)'
+
+                ws[f'{column}34'] = f'=SUM({column_tuple[0]}34:{column_tuple[counter - 1]}34)'
+                ws[f'{column}35'] = f'=SUM({column_tuple[0]}34:{column_tuple[counter - 1]}35)'
+
 
     def write_11 (self):
         '''
@@ -322,8 +489,9 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column}6'] = f'{self.data_interface.get("year", None)}'
 
             # print(v1)
-            ws[f"{column}14"] = sum(1 for i in v1.get('Остановка').get('Наличие павильона') if i[0] == 'да') if v1.get(
-                'Остановка', {}).get('Наличие павильона', []) else '-'
+            # ws[f"{column}14"] = sum(1 for i in v1.get('Остановка').get('Наличие павильона') if i[0] == 'да') if v1.get(
+            #     'Остановка', {}).get('Наличие павильона', []) else '-'
+
 
             ws[f"{column}16"] = sum(
                 1 for i in v1.get('Проезжая часть').get('Назначение') if i[0] == 'площадка отдыха') if v1.get(
@@ -422,6 +590,272 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column}38'] = f'=SUM({column_tuple[0]}38:{column_tuple[counter - 1]}38)'
                 ws[f'{column}39'] = f'=SUM({column_tuple[0]}39:{column_tuple[counter - 1]}39)'
 
+    def write_12 (self):
+        ws = self.wb['12']
+        # 4.7.1
+        rows_avtovokzal = 11
+        rows_gbdd = 11
+        rows_sto = 37
+        rows_hotels = 37
+        for name_district, obj in self.data.items():
+            if name_district == 'название дороги':
+                continue
+
+            for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
+
+                if value[0] in ['Автовокзалы', 'Автостанции']:
+                    # 4.7.1
+                    ws[f'B{rows_avtovokzal}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
+                    ws[f'I{rows_avtovokzal}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
+                    ws[f'N{rows_avtovokzal}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
+                    rows_avtovokzal += 1
+                elif value[0] in ['пост ГИБДД', 'пост ГИБДД/КПД']:
+                    # 4.7.2
+                    ws[f'AJ{rows_gbdd}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
+                    ws[f'AS{rows_gbdd}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
+                    ws[f'BA{rows_gbdd}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
+                    rows_gbdd += 1
+                elif value[0] == 'Гостиница/отель/мотель':
+                    # 4.7.4
+                    ws[f'B{rows_sto}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
+                    ws[f'I{rows_sto}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
+                    ws[f'N{rows_sto}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
+                    rows_sto += 1
+                elif value[0] == 'СТО':
+                    # 4.7.3
+                    ws[f'AJ{rows_hotels}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
+                    ws[f'AS{rows_hotels}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
+                    ws[f'BD{rows_hotels}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
+                    rows_hotels += 1
+
+    def write_13 (self):
+        ws = self.wb['13']
+
+        rows_azs = 10
+        rows_car_wash = 10
+        rows_ws = 37
+        rows_food = 37
+        for name_district, obj in self.data.items():
+            if name_district == 'название дороги':
+                continue
+
+            for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
+
+                if value[0] == 'АЗС':
+                    # 4.7.5
+                    ws[f'B{rows_azs}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                        'Адрес') else ''
+                    ws[f'K{rows_azs}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                         {}).get(
+                        'Привязка по оси') else ''
+                    ws[f'V{rows_azs}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание', {}).get(
+                        'Наименование') else ''
+                    rows_azs += 1
+                elif value[0] == 'Автомойка':
+                    # 4.7.6
+                    ws[f'AJ{rows_car_wash}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                        'Адрес') else ''
+                    ws[f'AS{rows_car_wash}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                               {}).get(
+                        'Привязка по оси') else ''
+                    ws[f'BD{rows_car_wash}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                                                                                                            {}).get(
+                        'Наименование') else ''
+                    rows_car_wash += 1
+                elif value[0] == 'Общественный туалет':
+                    # 4.7.7
+                    ws[f'B{rows_ws}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                        'Адрес') else ''
+                    ws[f'I{rows_ws}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                        {}).get(
+                        'Привязка по оси') else ''
+                    ws[f'N{rows_ws}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание', {}).get(
+                        'Наименование') else ''
+                    rows_ws += 1
+                elif value[0] == 'Кафе/столовая/ресторан':
+                    # 4.7.8
+                    ws[f'AJ{rows_food}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                                                                                                        {}).get(
+                        'Наименование') else ''
+                    ws[f'AS{rows_food}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                        'Адрес') else ''
+                    ws[f'BD{rows_food}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                           {}).get(
+                        'Привязка по оси') else ''
+                    rows_food += 1
+
+    def write_14 (self):
+        ws = self.wb['14']
+        rows_med = 8
+        for name_district, obj in self.data.items():
+            if name_district == 'название дороги':
+                continue
+
+            for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
+
+                if value[0] == 'Пункты первой медицинской помощи/почта/телефон':
+                    # 4.7.5
+                    ws[f'B{rows_med}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                        'Адрес') else ''
+                    ws[f'O{rows_med}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                         {}).get(
+                        'Привязка по оси') else ''
+                    ws[f'Y{rows_med}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание', {}).get(
+                        'Наименование') else ''
+                    rows_med += 1
+
+    def write_17(self):
+        """
+        27.09.2023
+        :return:
+        """
+        ws = self.wb['17']
+        counter = 0
+        column_tuple = ('J', 'O', 'T', 'Y', 'AD')
+        cells = ('L','Q','V','AA','AF')
+
+        pipes = {
+            "Металлические" : [0,0],
+            "Железобетонные": [0,0],
+            "Бетоннометаллические": [0,0],
+            "Каменные": [0,0],
+            "Деревянные": [0,0],
+            "Асбестоцементные": [0,0],
+        }
+        # 4.10.2 Сводная ведомость наличия тоннелей, галерей и пешеходных переходов в разных уровнях
+        types_of_structures = {
+            "Тоннель (галерея)": [0, 0],
+            "Пешеходный переход подземный": [0, 0],
+            "Пешеходный переход надземный": [0, 0],
+            "Водопропускная труба": pipes
+        }
+
+        def count_4_10_2(types_of_structures, column, cell):
+            for key, value in types_of_structures.items():
+                if self.data.get(f'участок {counter + 1}').get(key) == None:
+                    continue
+                else:
+                    if key == 'Водопропускная труба':
+                        print(self.data.get(f'участок {counter + 1}').get(key))
+                        for lst in self.data.get(f'участок {counter + 1}').get(key).get('Материал'):
+                                if lst[0] == 'металл':
+                                    types_of_structures.get(key).get('Металлические')[0] += 1
+                                    types_of_structures.get(key).get('Металлические')[1] += lst[4]
+                                elif lst[0] == 'ж/б':
+                                    types_of_structures.get(key).get('Железобетонные')[0] += 1
+                                    types_of_structures.get(key).get('Железобетонные')[1] += lst[4]
+
+                        ws[f'{column}37'] = types_of_structures.get(key).get('Металлические')[0]
+                        ws[f'{cell}37'] = types_of_structures.get(key).get('Металлические')[1]
+                        ws[f'{column}38'] = types_of_structures.get(key).get('Железобетонные')[0]
+                        ws[f'{cell}38'] = types_of_structures.get(key).get('Железобетонные')[1]
+
+                    else:
+                        result = self.data.get(f'участок {counter + 1}').get(key)
+                        types_of_structures.get(key)[0] += 1
+                        types_of_structures.get(key)[1] += result.get(list(result.keys())[0])[0][3]
+                        if key == 'Тоннель (галерея)':
+                            ws[f'{column}14'] = types_of_structures.get(key)[0]
+                            ws[f'{cell}14'] = types_of_structures.get(key)[1]
+                        elif key == 'Пешеходный переход подземный':
+                            ws[f'{column}20'] = types_of_structures.get(key)[0]
+                            ws[f'{cell}20'] = types_of_structures.get(key)[1]
+                        elif key == 'Пешеходный переход надземный':
+                            ws[f'{column}19'] = types_of_structures.get(key)[0]
+                            ws[f'{cell}19'] = types_of_structures.get(key)[1]
+
+
+        for k, v in self.data.items():
+            if k == 'название дороги':
+                continue
+            else:
+                column = column_tuple[counter]
+                cell = cells[counter]
+                if len(self.data) > 2:
+                    ws[f'{column}6'] = f'Участок {counter + 1}'
+                    count_4_10_2(types_of_structures, column, cell)
+                    types_of_structures = {
+                        "Тоннель (галерея)": [0, 0],
+                        "Пешеходный переход подземный": [0, 0],
+                        "Пешеходный переход надземный": [0, 0],
+                        "Водопропускная труба": pipes
+                    }
+                else:
+                    ws[f'{column}6'] = f'{self.data_interface.get("year", None)}'
+                    count_4_10_2(types_of_structures, column, cell)
+            counter += 1
+            ""
+
+    def write_18(self):
+        """
+        Описиваем данные по 18 листу
+        :return:
+        """
+        counter = 0
+        counter2 = 1
+        ws = self.wb['18']
+        column_tuple = ('AP', 'AU', 'AZ', 'BE', 'BJ', 'BM')
+        cells = ('AP', 'AR', 'AU', 'AW', 'AZ', 'BB', 'BE', 'BG')
+        types = {
+            "Асфальтобетонные": [0, 0],
+            "Цементобетонные": [0, 0],
+            "Тротуарная плитка": [0, 0],
+            "Щебеночные": [0, 0],
+            "Грунтовые": [0, 0],
+            "Ж/б плиты": [0, 0],
+        }
+
+        # 4.10.9 Сводная ведомость съездов (въездов)
+        for k1, v1 in self.data.items():
+            if k1 == 'название дороги':
+                continue
+            else:
+                column = column_tuple[counter]
+                cell = cells[counter2]
+                if len(self.data) > 2:
+                    ws[f'{column}30'] = f'Участок {counter + 1} \n {self.data_interface.get("year", None)} г.'
+                else:
+                    ws[f'{column}30'] = f'{self.data_interface.get("year", None)}'
+                for lst in self.data.get(k1).get('Съезд').get('Тип покрытия'):
+                    if lst[0] == 'асфальтобетон':
+                        types.get('Асфальтобетонные')[0] += 1
+                        types.get('Асфальтобетонные')[1] += lst[3]
+                    elif lst[0] == 'Цементобетонные':
+                        pass
+                    elif lst[0] == 'тротуарная плитка':
+                        ws['AI38'] = "Тротуарная плитка"
+                        types.get('Тротуарная плитка')[0] += 1
+                        types.get('Тротуарная плитка')[1] += lst[3]
+                    elif lst[0] == 'Щебеночные':
+                        pass
+                    elif lst[0] == 'Грунтовые':
+                        pass
+                    elif lst[0] == 'Ж/б плиты':
+                        pass
+
+                    ws[f'{column}36'] = types['Асфальтобетонные'][0] if types['Асфальтобетонные'][0] > 0 else ''
+                    ws[f'{cell}36'] = types['Асфальтобетонные'][1] if types['Асфальтобетонные'][1] > 0 else ''
+                    ws[f'{column}37'] = types['Цементобетонные'][0] if types['Цементобетонные'][0] > 0 else ''
+                    ws[f'{cell}37'] = types['Цементобетонные'][1] if types['Цементобетонные'][1] > 0 else ''
+                    ws[f'{column}38'] = types['Тротуарная плитка'][0] if types['Тротуарная плитка'][0] > 0 else ''
+                    ws[f'{cell}38'] = types['Тротуарная плитка'][1] if types['Тротуарная плитка'][1] > 0 else ''
+                    ws[f'{column}39'] = types['Щебеночные'][0] if types['Щебеночные'][0] > 0 else ''
+                    ws[f'{cell}39'] = types['Щебеночные'][1] if types['Щебеночные'][1] > 0 else ''
+                    ws[f'{column}40'] = types['Грунтовые'][0] if types['Грунтовые'][0] > 0 else ''
+                    ws[f'{cell}40'] = types['Грунтовые'][1] if types['Грунтовые'][1] > 0 else ''
+                    ws[f'{column}41'] = types['Ж/б плиты'][0] if types['Ж/б плиты'][0] > 0 else ''
+                    ws[f'{cell}41'] = types['Ж/б плиты'][1] if types['Ж/б плиты'][1] > 0 else ''
+                counter += 1
+                counter2 += 2
+
+            types = {
+                "Асфальтобетонные": [0, 0],
+                "Цементобетонные": [0, 0],
+                "Тротуарная плитка": [0, 0],
+                "Щебеночные": [0, 0],
+                "Грунтовые": [0, 0],
+                "Ж/б плиты": [0, 0],
+            }
 
     def write_linear_graphs (self):
         for i in range(len(glob.glob("*.txt"))):
@@ -540,8 +974,8 @@ def convert_visio2svg (path_dir):
 
 def main ():
     conn = db.Query('OMSK_CITY_2023')
-    # data = conn.get_tp_datas('ул. Интернациональная')
-    data = conn.get_tp_datas('ул. Масленникова')
+    data = conn.get_tp_datas('ул. Моторная')
+    # data = conn.get_tp_datas('ул. Масленникова')
 
 
     report = WriterExcelTP(data)

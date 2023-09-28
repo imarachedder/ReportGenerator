@@ -3,6 +3,7 @@ import pymssql
 import pandas as pd
 import pyodbc
 import sys
+import settings
 
 # стоянки, парковки смотеть в проезжей части, счтиается количество
 # Опоры освещения и контактные сети, считается длина
@@ -16,13 +17,12 @@ import sys
 
 class Query:
     def __init__(self, database=None):
-        __SERVER = "SIBREGION-SRV2"
-        __USER = "sibregion"
-        __PASSWORD = "SibU$r2018"
+        __SERVER = settings.server
+        __USER = settings.user
+        __PASSWORD = settings.password
         __DATABASE = str(database)
         # __DATABASE = "ZLATOUST_TEST_2021"
         print(__DATABASE)
-
         self.db = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
                                  'Server=' + __SERVER + ';'
                                                         'Database=' + __DATABASE + ';'
@@ -58,14 +58,42 @@ class Query:
         :param name: 
         :return: 
         """
+
+        res_km = {}
+        request_km = """select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
+                            Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
+                            Attribute.L1, Attribute.L2
+                            from Road inner join Way on Road.ID_Road = Way.ID_Road
+                            inner join High on Way.ID_Way = High.ID_Way
+                            inner join Attribute on High.ID_High = Attribute.ID_High
+                            inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                            inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                            inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                            where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
+        self.cursor.execute(request_km, name)
+
+        for param in self.cursor.fetchall():
+            # print(param)
+            if param[3] in res_km:
+
+                if param[6] in res_km.get(param[3]):
+                    if param[7] in res_km.get(param[3]).get(param[6]):
+                        res_km.get(param[3]).get(param[6]).get(param[7]).append(param[8::])
+                    else:
+                        res_km.get(param[3]).get(param[6]).update({param[7]: [param[8::]]})
+                else:
+                    res_km.get(param[3]).update({param[6]: {param[7]: [param[8::]]}})
+            else:
+                res_km.update({param[3]: {param[6]: {param[7]: [param[8::]]}}})
+
+        self.sort_dict_binding(res_km)
+
         res = {'название дороги': f'{name}', }
-        request_for_items = "select Item_Name from Group_Description"
-        # item_list = ['Ось дороги', 'Граница участка дороги', 'Километровые знаки', 'Остановка',
-        #              'Опоры освещения и контактной сети', 'Проезжая часть']  # 'Граница участка дороги'
+
         request = """
                    select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
                    Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
-                   Attribute.L1, Attribute.L2, dbo.CalcSquare(Image_Points) as Square
+                   Attribute.L1, Attribute.L2, dbo.CalcSquare(Image_Points) as Square, dbo.CalcLength(Image_Points) as Length
                    from Road inner join Way on Road.ID_Road = Way.ID_Road
                    inner join High on Way.ID_Way = High.ID_Way
                    inner join Attribute on High.ID_High = Attribute.ID_High
@@ -79,42 +107,33 @@ class Query:
 
 
         self.cursor.execute(request, name)  # item
-        # def generator():
-        #     for param in self.cursor.fetchall():
-        #         yield param
-        #
-        # gen = generator()
-        # for i in gen:
-        #     print(i)
 
         for param in self.cursor.fetchall():
-            # RES =  {НАЗВАНИЕ: "FWFW", {УЧАСТОК: {KEY:[(), ()]}}}
-            # print(param)
+            coordinates = tuple(param[8::])
+            tuple_km = tuple(
+                res_km.get(param[3], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
+
+            if tuple_km:
+                km = self.convert_m_to_km(param, tuple_km)
+                coordinates = (*param[8::], *km)
+
+            print(param, coordinates)
+
             if param[3] in res:
 
                 if param[6] in res.get(param[3]):
                     if param[7] in res.get(param[3]).get(param[6]):
-                        res.get(param[3]).get(param[6]).get(param[7]).append(param[8::])
+
+                        res.get(param[3]).get(param[6]).get(param[7]).append(coordinates)
                     else:
-                        res.get(param[3]).get(param[6]).update({param[7]: [param[8::]]})
+                        res.get(param[3]).get(param[6]).update({param[7]: [coordinates]})
                 else:
-                    res.get(param[3]).update({param[6]: {param[7]: [param[8::]]}})
+                    res.get(param[3]).update({param[6]: {param[7]: [coordinates]}})
             else:
-                res.update({param[3]: {param[6]: {param[7]: [param[8::]]}}})
+                res.update({param[3]: {param[6]: {param[7]: [coordinates]}}})
 
         # сортирует в словаре координаты по возрастанию
-        for _, value in res.items():
-            # print( type(value), value)
-            if type(value) == dict:
-                for i, val in value.items():
-                    if type(val) == dict:
-                        for elem in val.values():
-                            elem.sort(key= lambda x: x[1])
-
-
-            # if type(value) == dict:
-            #     for val in value.values():
-            #         val.sort(key=lambda x: x[1])
+        self.sort_dict_binding(res)
 
         return res
 
@@ -172,6 +191,115 @@ class Query:
         for key, value in dad_datas_dict.items():
             print(key, value)
         return dad_datas_dict
+
+    def convert_m_to_km (self, param, list_km):
+        '''
+        переводит метры в километры с привязкой к километровым знакам
+        :param param: объект из базы данных
+        :param list_km: список километровых знаков
+        :param distance_km: список дистанций между километровыми знаками
+        :return: привязки начала и конца объекта
+        '''
+        # частный случай километровые знаки
+        if param[6] == 'Километровые знаки':
+            return int(param[-3]), 0, int(param[-3]), 0
+        # если точечный объект
+        if param[-2] == param[-1]:
+            # print('start==end')
+
+            for idx_km, num_sign in enumerate(list_km):
+                # находим следующий километровый
+                if num_sign == list_km[-1]:
+                    next_km = list_km[-1]
+                elif num_sign == list_km[0]:
+                    next_km = list_km[1]
+                else:
+                    next_km = list_km[idx_km % len(list_km) + 1]
+
+                if num_sign[-2] <= param[-2] < next_km[-2]:
+                    return num_sign[0], param[-2] - num_sign[-2], num_sign[0], param[-1] - num_sign[-1]
+                elif param[-2] >= list_km[-1][-2]:
+                    return list_km[-1][0], param[-2] - list_km[-1][-2], list_km[-1][0], param[-1] - list_km[-1][-1]
+                # elif tmp[-2] <= param[-2] < num_sign[-2]:
+                #     return (tmp[0], param[-2] - tmp[-2]), (tmp[0], param[-1] - tmp[-1])
+                elif param[-2] < num_sign[-2]:
+                    return num_sign[0], param[-2] - num_sign[-2], num_sign[0], param[-1] - num_sign[-1]
+                # elif next_km[-2] <= param[-2]:
+                #     continue
+                #     # return (next_km[0], param[-2] - next_km[-2]), (next_km[0], param[-1] - next_km[-1])
+                else:
+                    continue
+        # если объект линейный или площадной
+        elif param[-2] != param[-1]:
+            start_km = 0
+            end_km = 0
+            start_m = 0  # начало
+            end_m = 0  # конец
+            idx = 0  # индекс километрового start
+            # ищем start
+            for idx_km, num_sign in enumerate(list_km):
+                if num_sign == list_km[-1]:
+                    next_km = list_km[-1]
+                    idx = idx_km
+                elif num_sign == list_km[0]:
+                    next_km = list_km[1]
+                    idx = idx_km
+                else:
+                    next_km = list_km[idx_km % len(list_km) + 1]
+                    idx = idx_km
+                if num_sign[-2] <= param[-2] < next_km[-2] or param[-2] < num_sign[-2]:
+                    start_km = num_sign[0]
+                    start_m = param[-2] - num_sign[-2]
+                    break
+                elif param[-2] > list_km[-1][-2]:
+                    start_km = list_km[-1][0]
+                    start_m = param[-2] - list_km[-1][-2]
+                    break
+                else:
+                    continue
+            # ищем end начиная с idx
+            for idx_km, num_sign in enumerate(list_km[idx:]):
+                if num_sign == list_km[-1]:
+                    next_km = list_km[-1]
+                elif num_sign == list_km[0]:
+                    next_km = list_km[1]
+                else:
+                    next_km = list_km[idx % len(list_km) + 1]
+                if num_sign[-1] <= param[-1] < next_km[-1] or param[-1] < num_sign[-1]:
+                    end_km = num_sign[0]
+
+                    end_m = param[-1] - num_sign[-1]
+                    break
+                elif param[-1] > list_km[-1][-1]:
+                    end_km = list_km[-1][0]
+                    end_m = param[-1] - list_km[-1][-1]
+                    break
+
+                else:
+                    continue
+            return start_km, start_m, end_km, end_m
+
+    def sort_dict_binding (self, res):
+        '''
+        сортирует словарь с объектами по первой привязке метровой
+        :param res:
+        :return: res
+        '''
+
+        for _, value in res.items():
+            if type(value) == dict:
+                for i, val in value.items():
+                    if type(val) == dict:
+
+                        for elem in val.values():
+                            # if type(elem[0]) == tuple:
+                            try:
+                                elem.sort(key = lambda x: x[1])
+                            except:
+                                elem.sort(key = lambda x: x[0][1])
+
+                            # else:
+                            #     elem.sort(key = lambda x: x[0][1])
 
     def close_db(self):
         self.db.close()

@@ -249,8 +249,8 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
 
         data = {
                     'name_road': self.windowTitle(),
-               } | info_window2 | info_window3 | self.result_data
-        self.preview = Preview(self.windowTitle(), parent = self, data=data)
+               } | info_window2 | info_window3 | self.result_data  # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
+        self.preview = Preview(self.windowTitle(), parent = self, data=self.result_data)
         self.write_json_file_info(data)
         self.preview.filling_templates(data)
         # self.preview.write_excel(data)
