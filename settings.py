@@ -15,8 +15,8 @@ path_templates_jinja = rf'{root_path}\templates\templates_curr\*[0-9].htm'
 path_file_html = rf'{root_path}\templates\tp_curr1.htm'
 
 # DB
-server = 'SIBREGION-SRV2'
-database = 'Testovaya'
-user = 'sibregion'
-password = 'SibU$r2018'
+server = 'localhost'
+database = 'NameDb'
+user = 'user'
+password = 'password'
 driver = '{SQL Server Native Client 11.0}'
