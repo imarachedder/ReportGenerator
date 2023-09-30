@@ -21,7 +21,6 @@ class Query:
         __USER = settings.user
         __PASSWORD = settings.password
         __DATABASE = str(database)
-        # __DATABASE = "ZLATOUST_TEST_2021"
         print(__DATABASE)
         self.db = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
                                  'Server=' + __SERVER + ';'
