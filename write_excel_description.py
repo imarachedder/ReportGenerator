@@ -90,86 +90,59 @@ class WriterExcelTP(WriterExcel):
         """
         # print(self.data.get(f'участок {1}').get('Ось дороги', None))
         ws = self.wb['6']  # выбираем лист
-        n = 1  # счетчик
+        n, i = 1, 2  # счетчик
+        res = 0
         # 2.1 Наименование дороги: name road
         ws["O5"].value = self.data.get('название дороги')
-
         # for i in range(self.data_interface.get('count_region', 1)):
         #     ws[f"L1{i}"].value = self.data.get('участки', 'None')[i]  # 2.2 Участок дороги: участки
 
-        # 2.2 Участок дороги 1, 2 и т.д.
-        if self.data_interface.get('count_region') > 1:
-            for i in range(0, self.data_interface.get("count_region", 0)):
-                if i == 0:
-                    ws[f'B1{i}'].value = f'2.2  Участок дороги {n}'
+        # 2.2 Участок дороги 1, 2 и т.д., 2.3 протяженность дороги(участка) и 2.5 категория дороги(участка), подъездов
+        for key, value in self.data.items():
+            if key == 'название дороги':
+                ws["AL10"] = self.data.get('название дороги')
+                continue
+            else:
+                if len(self.data) > 2:
+                    ws[f'B1{n-1}'] = f'2.2 Участок дороги {n}' if n-1 == 0 else f'      Участок дороги {n}'
+                    ws[f'B2{i-1}'] = f'Участок {n}'
                 else:
-                    ws[f'B1{i}'].value = f'         Участок дороги {n}'
-                # print(self.data.get('Ось дороги', None).get('Начало трассы', 0)[i])
-                # print("PECHATAYU", self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][2] )
-                ws[f'L1{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][1]} + " \
-                                     f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][2]} м."
-                n += 1
-            n = 1
-        else:
-            # ws["S14"].value = self.data.get('протяженность дороги', None)  # 2.3 Протяженность дороги: протяженность
-            ws["L10"].value = f"{self.data.get(f'весь участок').get('Ось дороги', None).get('Начало трассы')[0][1]} + " \
-                                 f"{self.data.get(f'весь участок').get('Ось дороги', None).get('Начало трассы')[0][2]} м."
-
-
-        # 2.3 Суммарна протяженность по участку или участкам
-        if self.data_interface.get("count_region") > 1:
-            res = 0
-            for i in range(0, self.data_interface.get("count_region", 0)):
-                res += int(self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][2])
-                n += 1
-            n = 1
-            ws["S14"].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы')[0][1]} + {res} м."
-        else:
-            ws["S14"].value = self.data.get(f'весь участок').get('Ось дороги', None)['Начало трассы'][0][2]
-
-        # заполняет таблицу 2.3 Протяженность дороги
-        if self.data_interface.get('count_region') > 1:
-            for i in range(2, (self.data_interface.get('count_region') * 2) + 1, 2):
-                # print(self.data.get('count_region') * 2)
-                ws[f'B2{i - 1}'].value = f'Участок {n}'
-                # print(self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[4%self.data.get('count_region')][1])
+                    ws[f'B1{n-1}'] = f'2.2 Участок дороги'
+                    ws[f'B2{i-1}'] = f'Весь участок'
                 if n % 2 != 0:
-                    ws[f'B2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data_interface.get('count_region')][1]
-                    ws[f'F2{i}'].value = self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i%self.data_interface.get('count_region') ][2]
-                    ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region')][1]} + " \
-                                          f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region')][2]} м."
+                    ws[f'B2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][1]}"
+                    ws[f'F2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][2]}"
+                    ws[f'J2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1)][2]} м."
                 else:
-                    ws[f'B2{i}'].value = \
-                    self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][1]
-                    ws[f'F2{i}'].value = \
-                    self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][2]
-                    ws[f'J2{i}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][1]} + " \
-                                         f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[i % self.data_interface.get('count_region') -1][2]} м."
+                    ws[f'B2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][1]}"
+                    ws[f'F2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][2]}"
+                    ws[f'J2{i}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][1]} + " \
+                                   f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[i % (len(self.data) - 1) - 1][2]} м."
 
-                # ПОКА ПРОПУСКАЕМ ЭТОТ ПУНКТ
-                ws[f'N2{i}'].value = self.data.get('подъездов', None)
-                ws[f'R2{i}'].value = self.data.get('дороги вместе с подъездами', None)
-                ws[f'V2{i}'].value = self.data.get('обслуживаемых дорожной организацией', None)
-                ws[f'AB2{i}'].value = self.data.get('находящихся в ведении города', None)
-                ws[f'AG2{i}'].value = self.data.get('совмещенных', None)
+                ws[f'L1{n-1}'] = f'{self.data.get(key).get("Ось дороги", None).get("Начало трассы", 0)[0][1]} + ' \
+                                 f'{self.data.get(key).get("Ось дороги", None).get("Начало трассы", 0)[0][2]} м.'
+                ws[f'AW1{i - 1}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[0][1]} + " \
+                                  f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[0][1]}"
+                ws[f'BA1{i - 1}'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[0][1]} + " \
+                                        f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[0][2]}"
+
+                # ПРИДУМАТЬ УНИВЕРСАЛЬНОЕ РЕШЕНИЕ К КАТЕГОРИЯМ УЧАСТКА ДОРОГИ, НАПИСАТЬ ЛОГИКУ, УСЛОВИЯ
+                ws[f'BE1{i - 1}'] = f"{self.data.get(key).get('Граница участка дороги', '-').get('категория а/д')[0][0]}"
+
+                res += int(self.data.get(key).get('Ось дороги', None).get('Начало трассы', 0)[0][2])
                 n += 1
-            n = 1
+                i += 2
+        else:
+            ws['S14'] = f"{self.data.get(key).get('Ось дороги', None).get('Начало трассы')[0][1]} + {res} м."
 
         # заполняет таблицу 2.4 Наименование подъездов (обходов) и их протяженность
         ws["B37"].value = self.data.get('подъезды', None)
 
-        # заполняет таблицу 2.5 Категория дороги (участка), подъездов
-        if self.data_interface.get("count_region") > 1:
-            counter = 1
-            ws["AL10"].value = self.data.get('название дороги')
-            for i in range(0, self.data_interface.get("count_region")):
-                # ДОПИСАТЬ КАТЕГОРИИ
-                ws[rf'AW1{counter}'].value = f"{0} + {self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][1]}"
-                ws[rf'BA1{counter}'].value = f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][1]} + " \
-                                        f"{self.data.get(f'участок {n}').get('Ось дороги', None).get('Начало трассы', 0)[0][2]}"
-                n += 1
-                counter += 2
-            n = 1
 
         # заполняет таблицу 2.6 Краткая историческая справка
         ws["AL33"].value = "Историческая справка"
@@ -199,8 +172,7 @@ class WriterExcelTP(WriterExcel):
                 start = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][0].split('+')
                 end = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][0].split('+')
 
-                ws[
-                    f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
+                ws[f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
                 counter_distr_soder += 1
         # 2.8
 
@@ -225,7 +197,7 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column_tuple[idx]}{counter}'] = next_name[2] - name[2]
                 counter += 1
 
-    def write_8(self, data):
+    def write_8(self):
         """
         Расписываем экономическую характеристику
         :param data:
@@ -238,14 +210,14 @@ class WriterExcelTP(WriterExcel):
         # Выбираем лист
         ws = self.wb['8']
         # 3.1 Экономическое и административное значение дороги
-        ws['B6'] = self.data.get('economical_characteristic_road')
+        ws['B6'] = self.data_interface.get('economical_characteristic_road', None)
         # 3.2 Связь дороги с ж/д и водными путями и автомобильными дорогами
-        ws['B19'] = self.data.get('railway_waterway')
+        ws['B19'] = self.data_interface.get('railway_waterway')
         # 3.3 Характеристика движения, его сезонность и перспектива роста
-        ws['B33'] = self.data.get('movement_characteristic')
+        ws['B33'] = self.data_interface.get('movement_characteristic')
         # 3.4 Среднесуточная интенсивность движения по данным учета
 
-    def write_9(self, data):
+    def write_9(self):
         """
         Техническая характеристика
         :param data:
@@ -275,6 +247,16 @@ class WriterExcelTP(WriterExcel):
         # 4.3.1 Ширина проезжей части
 
 
+        for key, val in self.data.items():
+            if key == 'название дороги':
+                continue
+            else:
+                if len(self.data) > 2:
+                    ws[f'AJ{n + 1}'] = f'Участок {n}'
+                else:
+                    ws[f'AJ{n + 1}'] = key.title()
+
+
         if self.data_interface.get('count_region') > 1:
 
             # Цикл по количеству учасков
@@ -284,8 +266,6 @@ class WriterExcelTP(WriterExcel):
 
                 ws[f'AJ1{n+1}'].value = f'Участок {i+1}'
                 res = self.data.get(f'участок {i + 1}').get('Ось дороги').get('Начало трассы')[0][2]
-                # if i == 1:
-                #     break
                 for j in range(len(self.data.get(f'участок {i + 1}').get('Ширина проезжей части').get('Ширина ПЧ')), 0, -1):
                     if float(self.data.get(f'участок {i+1}').get('Ширина проезжей части').get('Ширина ПЧ')[j-1][0]) <= 4.0:
                         res2 += calcLengthOfTheWidthOfTheCarriageWay(res, i, j)
@@ -461,7 +441,7 @@ class WriterExcelTP(WriterExcel):
 
     def write_11 (self):
         '''
-       21.09.2023 таблица  4.6 заполняется, ограничения нужна длина
+       21.09.2023 таблица 4.6 заполняется, ограничения нужна длина
         :return:
         '''
         ws = self.wb['11']
@@ -975,6 +955,7 @@ def convert_visio2svg (path_dir):
 def main ():
     conn = db.Query('OMSK_CITY_2023')
     data = conn.get_tp_datas('ул. Моторная')
+    # data = conn.get_tp_datas('ул. Интернациональная')
     # data = conn.get_tp_datas('ул. Масленникова')
 
 
