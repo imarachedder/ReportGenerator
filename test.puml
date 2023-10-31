@@ -15,4 +15,13 @@ class Query {
     size()
 }
 
+
+
+abstract class NewAbstract
+
+New_doc --> Open
+Doc --> Open
+Open --> Read
+Read --> Save
+
 @enduml

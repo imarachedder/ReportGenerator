@@ -178,11 +178,12 @@ class Ui_MainWindow3(object):
 
 
 class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
-    def __init__ (self, title=None, parent=None, data = None):
+    def __init__ (self, title=None, parent=None, data = None, path = None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Window3, self).__init__(parent)
         self.parent = parent
+        self.path_dir = path
         self.info = None
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)

@@ -50,7 +50,7 @@ class Query:
         print(self.road_names['Название'])
         return self.road_names['Название']
 
-    def get_tp_datas(self, name):
+    def get_tp_datas(self, road_name):
         """ 07.08.2023 ревью кода """
         """
         Вытаскиваем данные по техническому паспорту из базы данных
@@ -59,81 +59,86 @@ class Query:
         """
 
         res_km = {}
-        request_km = """select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
-                            Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
-                            Attribute.L1, Attribute.L2
-                            from Road inner join Way on Road.ID_Road = Way.ID_Road
-                            inner join High on Way.ID_Way = High.ID_Way
-                            inner join Attribute on High.ID_High = Attribute.ID_High
-                            inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
-                            inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
-                            inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
-                            where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
-        self.cursor.execute(request_km, name)
+
+        request_km = """ select Road.Name, High.Description, Group_Description.Item_Name,
+                     Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(Image_Points) as Length,
+                     dbo.CalcSquare(Image_Points) as Square, Params.ID_Param, dbo.GetNumPoint(Image_Points),
+                     dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax, Attribute.L1, Attribute.L2
+                     from Road inner join Way on Road.ID_Road = Way.ID_Road
+                     inner join High on Way.ID_Way = High.ID_Way
+                     inner join Attribute on High.ID_High = Attribute.ID_High
+                     inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                     inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                     inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                     where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
+        self.cursor.execute(request_km, road_name)
+        # последовательность объектов : [(значение, длина, площадь, id параметра, количество точек, минимальное отклонение
+        # максимамальное отклонение, начало метры, конец метры, (начало_километры, начало_метры), (конец_километры, конец_метры), ...]
 
         for param in self.cursor.fetchall():
             # print(param)
-            if param[3] in res_km:
+            if param[1] in res_km:
 
-                if param[6] in res_km.get(param[3]):
-                    if param[7] in res_km.get(param[3]).get(param[6]):
-                        res_km.get(param[3]).get(param[6]).get(param[7]).append(param[8::])
+                if param[2] in res_km.get(param[1]):
+                    if param[3] in res_km.get(param[1]).get(param[2]):
+                        res_km.get(param[1]).get(param[2]).get(param[3]).append(param[4::])
                     else:
-                        res_km.get(param[3]).get(param[6]).update({param[7]: [param[8::]]})
+                        res_km.get(param[1]).get(param[2]).update({param[3]: [param[4::]]})
                 else:
-                    res_km.get(param[3]).update({param[6]: {param[7]: [param[8::]]}})
+                    res_km.get(param[1]).update({param[2]: {param[3]: [param[4::]]}})
             else:
-                res_km.update({param[3]: {param[6]: {param[7]: [param[8::]]}}})
+                res_km.update({param[1]: {param[2]: {param[3]: [param[4::]]}}})
 
         self.sort_dict_binding(res_km)
 
-        res = {'название дороги': f'{name}', }
+        # Road.ID_Road
+        res = {'название дороги': f'{road_name}', }
 
         request = """
-                   select Road.ID_Road, Road.Name, Way.Description,High.Description, Way.ID_Way,
-                   Params.ID_Param, Group_Description.Item_Name, Types_Description.Param_Name, Params.ValueParam,
-                   Attribute.L1, Attribute.L2, dbo.CalcSquare(Image_Points) as Square, dbo.CalcLength(Image_Points) as Length
-                   from Road inner join Way on Road.ID_Road = Way.ID_Road
-                   inner join High on Way.ID_Way = High.ID_Way
-                   inner join Attribute on High.ID_High = Attribute.ID_High
-                   inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
-                   inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
-                   inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
-                   where Road.Name = ? 
+                select Road.Name, High.Description, Group_Description.Item_Name,
+                Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(Image_Points) as Length,
+                dbo.CalcSquare(Image_Points) as Square, Params.ID_Param, dbo.GetNumPoint(Image_Points),
+                round(dbo.Amin(Image_Points), 2) as Amin, round(dbo.Amax(Image_Points), 2) as Amax,
+                Attribute.L1, Attribute.L2
+                from Road inner join Way on Road.ID_Road = Way.Id_Road
+                inner join High on Way.ID_Way = High.ID_Way
+                inner join Attribute on High.ID_High = Attribute.ID_High
+                inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                where Road.Name = ?
+                """
 
-               """  # and Group_Description.Item_Name = ?
-        # for i, item in enumerate(item_list):
-
-
-        self.cursor.execute(request, name)  # item
+        self.cursor.execute(request, road_name)  # item
 
         for param in self.cursor.fetchall():
-            coordinates = tuple(param[8::])
+            # coordinates = tuple(param[8::])
             tuple_km = tuple(
-                res_km.get(param[3], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
+                res_km.get(param[1], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
 
             if tuple_km:
                 km = self.convert_m_to_km(param, tuple_km)
-                coordinates = (*param[8::], *km)
+            else:
+                km = ((0, param[-2]), (0, param[-1]))
+            coordinates = (*param[8::], *km)
 
             print(param, coordinates)
 
-            if param[3] in res:
+            if param[1] in res:
 
-                if param[6] in res.get(param[3]):
-                    if param[7] in res.get(param[3]).get(param[6]):
+                if param[2] in res.get(param[1]):
+                    if param[3] in res.get(param[1]).get(param[2]):
 
-                        res.get(param[3]).get(param[6]).get(param[7]).append(coordinates)
+                        res.get(param[1]).get(param[2]).get(param[3]).append(coordinates)
                     else:
-                        res.get(param[3]).get(param[6]).update({param[7]: [coordinates]})
+                        res.get(param[1]).get(param[2]).update({param[3]: [coordinates]})
                 else:
-                    res.get(param[3]).update({param[6]: {param[7]: [coordinates]}})
+                    res.get(param[1]).update({param[2]: {param[3]: [coordinates]}})
             else:
-                res.update({param[3]: {param[6]: {param[7]: [coordinates]}}})
+                res.update({param[1]: {param[2]: {param[3]: [coordinates]}}})
 
         # сортирует в словаре координаты по возрастанию
         self.sort_dict_binding(res)
-
         return res
 
     def get_dad_datas(self, name):

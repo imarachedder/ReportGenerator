@@ -402,7 +402,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
 
     def window3_show(self):
         """ Переход в окно 3"""
-        self.window3 = Window3(title=self.title, parent=self, data = self.result_data)
+        self.window3 = Window3(title=self.title, parent=self, data = self.result_data, path = self.path_dir)
         self.window3.show()
 
 
