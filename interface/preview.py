@@ -3,11 +3,15 @@ import sys
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6 import QtWebEngineWidgets
+from PyQt6.QtWidgets import QMessageBox
 from jinja2 import Template
 
-from settings import path_file_html, path_templates_jinja
-from write_excel_description import WriterExcelTP, WriterExcelDAD
 
+
+from settings import path_file_html, path_templates_jinja
+from write_excel_description import WriterExcelTP, WriterExcelDAD, WriterApplicationCityTP
+from pasteVisio import ConvertVisio
+from mergePdfFiles import MergeFiles
 
 class Ui_Preview_window(object):
 
@@ -41,27 +45,34 @@ class Ui_Preview_window(object):
 
 class Preview(QtWidgets.QDialog, Ui_Preview_window):
     # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
-    def __init__ (self, title=None, parent=None, data=None):
+    def __init__ (self, title=None, parent=None, data=None, path_dir = None, data_interface = None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Preview, self).__init__(parent)
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
+        self.path_dir = path_dir
         # self.data = data
         # print(self.data)
         self.title = title
-        self.buttonBox.accepted.connect(lambda : self.write_excel(data))
+        # todo: выловить ошибку с работой кнопки ОК
+        self.buttonBox.accepted.connect(lambda : self.write_excel(data=data, data_interface = data_interface))
 
-    def write_excel (self, data=None):
+    
+    def write_excel (self, data=None, data_interface = None):
         if data is None:
             data = {}
         if self.parent().parent.tp_checkBox.isChecked():
             print('заполняю тех паспорт')
-
-            report = WriterExcelTP(data)
+            print("Вхожу в ", self.path_dir)
+            report = WriterExcelTP(data = data, path=self.path_dir, data_interface=data_interface)
             report.save_file()
+            # apps = WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface)
+            # apps.save_file()
+            print('сохранил файл')
 
-        print('сохранил файл')
+            # file = ConvertVisio(path_dir=self.path_dir, filename = data.get('название дороги'))
+            # res = MergeFiles(path_dir=self.path_dir, filename=data.get('название дороги'))
         # report.save_file()
 
     def filling_templates (self, data=None):

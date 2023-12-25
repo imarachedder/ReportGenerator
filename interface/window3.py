@@ -184,6 +184,7 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         super(Window3, self).__init__(parent)
         self.parent = parent
         self.path_dir = path
+        print(self.path_dir)
         self.info = None
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
@@ -248,12 +249,12 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         info_window2 = self.parent.get_info_window2()
         info_window3 = self.get_info_from_plain_text_edit()
 
-        data = {
+        data_interface = {
                     'name_road': self.windowTitle(),
-               } | info_window2 | info_window3 | self.result_data  # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
-        self.preview = Preview(self.windowTitle(), parent = self, data=self.result_data)
-        self.write_json_file_info(data)
-        self.preview.filling_templates(data)
+               } | info_window2 | info_window3  # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
+        self.preview = Preview(self.windowTitle(), parent = self, data=self.result_data, path_dir = self.path_dir, data_interface = data_interface)
+        self.write_json_file_info(data_interface)
+        self.preview.filling_templates(data_interface)
         # self.preview.write_excel(data)
         self.preview.show()
 

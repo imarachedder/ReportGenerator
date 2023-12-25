@@ -10,9 +10,11 @@ path_icon_done = rf'{root_path}\static\check_green.png'
 path_icon_not_done = rf'{root_path}\static\check_red.png'
 
 # template path's
-path_template_excel = rf'{root_path}\templates\tp_curr.xlsx'
+# path_template_excel = rf'{root_path}\templates\tp_curr.xlsx'
+path_template_excel = rf'{root_path}\templates\Паспорт_Рамки2.xlsx'
+
 path_templates_jinja = rf'{root_path}\templates\templates_curr\*[0-9].html'
-path_template_excel_application = rf'{root_path}\templates\tp_vedomost.xlsx'
+path_template_excel_application = rf'{root_path}\templates\Приложение_Город_Рамки.xlsx'
 path_file_html = rf'{root_path}\templates\tp_curr1.htm'
 
 # DB

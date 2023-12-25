@@ -263,7 +263,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.parent = parent
         self.database_name = database_name
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
-        self.path_dir = r'C:\Users\sibregion\Desktop'
+        # self.path_dir = r'C:\Users\sibregion\Desktop'
 
         self.next_pushButton.clicked.connect(
             self.get_info_window2)  # при нажатии кнопки далее выводится информация с текущего окна
@@ -271,7 +271,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
             self.check_tip_document)  # при нажатии кнопки далее проверяется выбран ли тип документ
         # self.tp_checkBox.toggled['bool'].connect(self.tp_checkbox_true)     # проверка кнопки ТП
         # self.dad_checkBox.toggled['bool'].connect(self.dad_checkbox_true)  # проверка кнопки диагностика
-        self.get_path_dir_pushButton.clicked.connect(self.set_path_dir)
+        self.path_dir = self.get_path_dir_pushButton.clicked.connect(self.set_path_dir)
         self.cance_pushButton.clicked.connect(self.back_to_win3)
         self.contractor_lineEdit.setText('ООО "Сибирь Регион"')  # значение по умолчанию
         self.contractor_boss_lineEdit.setText('С.Л. Игнатенко')  # значение по умолчанию
@@ -339,6 +339,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         year = self.year_lineEdit.text()
         cypher = self.cypher_lineEdit.text()
         count_region = int(self.count_region_lineEdit.text())
+        tip_passport = "city" if self.road_city_radioButton.isChecked() else ' '
 
         return {'path_dir': path_dir,
                 'count_region': count_region,
@@ -349,7 +350,8 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                 'fio_contractor': fio_contractor,
                 'position_contractor': position_contractor,
                 'year': year,
-                'cypher': cypher}
+                'cypher': cypher,
+                'tip_passport': tip_passport}
 
     def check_tip_document(self):
         '''
@@ -385,7 +387,13 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                         self.request = db.Query(self.database_name)
                         self.result_data = self.request.get_tp_datas(self.title)
                         print("Сбор данных по автомобильной дороге успешно выполнен!")
-                    self.window3_show()
+                    try:
+                        self.window3_show()
+                    except Exception as e:
+                        msg = QMessageBox()
+                        msg.setText(f"Ошибка {e}")
+                        msg.setWindowTitle("error")
+                        msg.exec()
                 except Exception as e:
                     raise 'Не удалось подключиться к базе данных. Ошибка {e}'
 

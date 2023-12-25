@@ -100,7 +100,7 @@ class Query:
                 dbo.CalcSquare(Image_Points) as Square, Params.ID_Param, dbo.GetNumPoint(Image_Points),
                 round(dbo.Amin(Image_Points), 2) as Amin, round(dbo.Amax(Image_Points), 2) as Amax,
                 Attribute.L1, Attribute.L2
-                from Road inner join Way on Road.ID_Road = Way.Id_Road
+                from Road inner join Way on Road.ID_Road = Way.ID_Road
                 inner join High on Way.ID_Way = High.ID_Way
                 inner join Attribute on High.ID_High = Attribute.ID_High
                 inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
@@ -120,7 +120,8 @@ class Query:
                 km = self.convert_m_to_km(param, tuple_km)
             else:
                 km = ((0, param[-2]), (0, param[-1]))
-            coordinates = (*param[8::], *km)
+            coordinates = (*param[4::], *km)
+
 
             print(param, coordinates)
 
@@ -205,8 +206,8 @@ class Query:
         :return: привязки начала и конца объекта
         '''
         # частный случай километровые знаки
-        if param[6] == 'Километровые знаки':
-            return int(param[-3]), 0, int(param[-3]), 0
+        if param[2] == 'Километровые знаки':
+            return (int(param[-7]), 0), (int(param[-7]), 0)
         # если точечный объект
         if param[-2] == param[-1]:
             # print('start==end')
@@ -221,13 +222,13 @@ class Query:
                     next_km = list_km[idx_km % len(list_km) + 1]
 
                 if num_sign[-2] <= param[-2] < next_km[-2]:
-                    return num_sign[0], param[-2] - num_sign[-2], num_sign[0], param[-1] - num_sign[-1]
+                    return (int(num_sign[0]), param[-2] - num_sign[-2]), (int(num_sign[0]), param[-1] - num_sign[-1])
                 elif param[-2] >= list_km[-1][-2]:
-                    return list_km[-1][0], param[-2] - list_km[-1][-2], list_km[-1][0], param[-1] - list_km[-1][-1]
+                    return (int(list_km[-1][0]), param[-2] - list_km[-1][-2]), (int(list_km[-1][0]), param[-1] - list_km[-1][-1])
                 # elif tmp[-2] <= param[-2] < num_sign[-2]:
                 #     return (tmp[0], param[-2] - tmp[-2]), (tmp[0], param[-1] - tmp[-1])
                 elif param[-2] < num_sign[-2]:
-                    return num_sign[0], param[-2] - num_sign[-2], num_sign[0], param[-1] - num_sign[-1]
+                    return (int(num_sign[0]), param[-2] - num_sign[-2]), (int(num_sign[0]), param[-1] - num_sign[-1])
                 # elif next_km[-2] <= param[-2]:
                 #     continue
                 #     # return (next_km[0], param[-2] - next_km[-2]), (next_km[0], param[-1] - next_km[-1])
@@ -261,7 +262,7 @@ class Query:
                     break
                 else:
                     continue
-            # ищем end начиная с idx
+            # ищем end начиная с idx благодаря этому отсекаются уже пройденные километровые
             for idx_km, num_sign in enumerate(list_km[idx:]):
                 if num_sign == list_km[-1]:
                     next_km = list_km[-1]
@@ -271,7 +272,6 @@ class Query:
                     next_km = list_km[idx % len(list_km) + 1]
                 if num_sign[-1] <= param[-1] < next_km[-1] or param[-1] < num_sign[-1]:
                     end_km = num_sign[0]
-
                     end_m = param[-1] - num_sign[-1]
                     break
                 elif param[-1] > list_km[-1][-1]:
@@ -281,11 +281,11 @@ class Query:
 
                 else:
                     continue
-            return start_km, start_m, end_km, end_m
+            return (int(start_km), start_m), (int(end_km), end_m)
 
     def sort_dict_binding (self, res):
         '''
-        сортирует словарь с объектами по первой привязке метровой
+        сортирует словарь с объектами по первой метровой привязке
         :param res:
         :return: res
         '''
@@ -296,14 +296,10 @@ class Query:
                     if type(val) == dict:
 
                         for elem in val.values():
-                            # if type(elem[0]) == tuple:
-                            try:
-                                elem.sort(key = lambda x: x[1])
-                            except:
-                                elem.sort(key = lambda x: x[0][1])
-
-                            # else:
-                            #     elem.sort(key = lambda x: x[0][1])
+                            if len(elem[0]) != 13:
+                                elem.sort(key=lambda x: x[-2])
+                            else:
+                                elem.sort(key=lambda x: (x[-2][0], x[-1][1]))
 
     def close_db(self):
         self.db.close()
@@ -322,6 +318,7 @@ def databases():
 def main ():
     db = Query('OMSK_CITY_2023')  # FKU_VOLGO_VYATSK_1
     list_roads = databases()
+    print(list_roads)
     # print(list_roads)
     # data = db.get_dad_datas('P-254')  # Р-176 "Вятка" Чебоксары - Йошкар-Ола - Киров - Сыктывкар
     data_test = db.get_tp_datas('ул. Интернациональная')
