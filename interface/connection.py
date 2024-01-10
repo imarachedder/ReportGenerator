@@ -8,6 +8,7 @@ import sys
 from PyQt6 import QtCore, QtGui, QtWidgets
 from interface import window2
 from db import Query, databases
+
 from settings import path_icon_app
 
 

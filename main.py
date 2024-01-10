@@ -1,4 +1,3 @@
-
 import db
 from interface import connection
 

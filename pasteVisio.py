@@ -81,9 +81,9 @@ class ConvertVisio():
         self.convert(out_doc, self.out_path)
         visio.Quit()
         excel.Quit()
+        # setting Message box window title
         msg = QMessageBox()
         msg.setText("Файл успешно сохранен")
-        # setting Message box window title
         msg.setWindowTitle("Файл сохранен")
         msg.exec()
 
@@ -91,10 +91,6 @@ class ConvertVisio():
 ##################################################################################
 ########################### ОСНОВНОЕ РАБОЧИЙ КОД #################################
 ##################################################################################
-
-
-def merge():
-    pass
 
 #
 # def set_ps(page, cell, value):

@@ -79,6 +79,7 @@ class WriterExcelTP(WriterExcel):
         self.write_17()
         print('18 лист')
         self.write_18()
+        print("сохранение")
         self.save_file()
 
     def write_pereplet (self):
@@ -163,6 +164,7 @@ class WriterExcelTP(WriterExcel):
         # try:
         # 2.2 Участок дороги 1, 2 и т.д., 2.3 протяженность дороги(участка) и 2.5 категория дороги(участка), подъездов
         ws["AL10"] = self.data.get('название дороги')
+
         for key, value in self.data.items():
             if key == 'название дороги':
                 continue
