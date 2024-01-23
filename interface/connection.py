@@ -33,8 +33,8 @@ class Ui_Connection_window(object):
 
         # СОЗДАЮТСЯ КОМБО-БОКСЫ ДЛЯ СПИСКА БД И ДОРОГ
         self.database_box = QtWidgets.QComboBox(parent=self.centralwidget)
-        # self.database_box.addItems(databases())
-        # self.database_box.activated.connect(self.get_name_db)
+        self.database_box.addItems(databases())
+        self.database_box.activated.connect(self.get_name_db)
         self.database_box.setObjectName("database_box")
 
         self.road_box = QtWidgets.QComboBox(parent=self.centralwidget) # комбо-бокс для списка доступных дорог
@@ -82,6 +82,7 @@ class ConnectionApp(QtWidgets.QMainWindow, Ui_Connection_window):
         self.database_box.addItems(databases())
         self.database_box.activated.connect(self.get_name_db)
 
+
     def enable_btw_connection(self):
         """ Включить кнопку соединения """
         return self.connection_button.setEnabled(True)
@@ -114,7 +115,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ConnectionApp()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
-    app.exec()  # и запускаем приложение
+    sys.exit(app.exec())  # и запускаем приложение
 
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем

@@ -32,9 +32,9 @@ class WriterExcel:
 
     def save_file (self):
         # сохранить файл
-        name_file = self.data.get('название дороги')
-        if '/' in self.data.get('название дороги') or ':' in self.data.get('название дороги'):
-            name_file = self.data.get('название дороги').replace("/", ".").replace(":", ".")[:40]
+        name_file = self.data.get('название дороги','дорога')
+        if '/' in self.data.get('название дороги','дорога') or ':' in self.data.get('название дороги','дорога'):
+            name_file = self.data.get('название дороги','дорога').replace("/", ".").replace(":", ".")[:40]
         self.wb.save(rf'{self.path_dir}\ТП_{name_file}.xlsm')
         self.close_file()
 
@@ -290,6 +290,7 @@ class WriterExcelTP(WriterExcel):
         # заполняет таблицу 2.6 Краткая историческая справка
         ws["AL33"].value = self.data_interface.get('history_match', None)
 
+
     def write_7 (self):
         # 2.7
         ws = self.wb['7']
@@ -453,12 +454,12 @@ class WriterExcelTP(WriterExcel):
                                 val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]):
                             sum6 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
                         res = val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][8]
-                        ws[f'G3{5}'].value = None if sum1 == 0 else round(sum1 / 1000, 3)
-                        ws[f'K3{7}'].value = None if sum2 == 0 else round(sum2 / 1000, 3)
-                        ws[f'P3{9}'].value = None if sum3 == 0 else round(sum3 / 1000, 3)
-                        ws[f'U4{1}'].value = None if sum4 == 0 else round(sum4 / 1000, 3)
-                        ws[f'Z4{3}'].value = None if sum5 == 0 else round(sum5 / 1000, 3)
-                        ws[f'AE4{5}'].value = None if sum6 == 0 else round(sum6 / 1000, 3)
+                        ws[f'G3{i}'].value = '-' if sum1 == 0 else round(sum1 / 1000, 3)
+                        ws[f'K3{i}'].value = '-' if sum2 == 0 else round(sum2 / 1000, 3)
+                        ws[f'P3{i}'].value = '-' if sum3 == 0 else round(sum3 / 1000, 3)
+                        ws[f'U4{i}'].value = '-' if sum4 == 0 else round(sum4 / 1000, 3)
+                        ws[f'Z4{i}'].value = '-' if sum5 == 0 else round(sum5 / 1000, 3)
+                        ws[f'AE4{i}'].value = '-' if sum6 == 0 else round(sum6 / 1000, 3)
                 except Exception as e:
                     # self.msg.setText(f"Ошибка 4.2")
                     # self.msg.setWindowTitle("Ошибка в 9 листе")
@@ -504,16 +505,16 @@ class WriterExcelTP(WriterExcel):
 
                     res = val.get('Ширина проезжей части').get('Ширина ПЧ')[j - 1][8]
                     ws[f'AJ{n}'].value = self.data_interface.get('year', '')
-                    ws[f'AL{n}'].value = None if res2 == 0 else round(res2 / 1000, 3)
-                    ws[f'AO{n}'].value = None if res3 == 0 else round(res3 / 1000, 3)
-                    ws[f'AR{n}'].value = None if res4 == 0 else round(res4 / 1000, 3)
-                    ws[f'AU{n}'].value = None if res5 == 0 else round(res5 / 1000, 3)
-                    ws[f'AX{n}'].value = None if res6 == 0 else round(res6 / 1000, 3)
-                    ws[f'BA{n}'].value = None if res7 == 0 else round(res7 / 1000, 3)
-                    ws[f'BD{n}'].value = None if res8 == 0 else round(res8 / 1000, 3)
-                    ws[f'BG{n}'].value = None if res9 == 0 else round(res9 / 1000, 3)
-                    ws[f'BJ{n}'].value = None if res10 == 0 else round(res10 / 1000, 3)
-                    ws[f'BM{n}'].value = None if res11 == 0 else round(res11 / 1000, 3)
+                    ws[f'AL{n}'].value = '-' if res2 == 0 else round(res2 / 1000, 3)
+                    ws[f'AO{n}'].value = '-' if res3 == 0 else round(res3 / 1000, 3)
+                    ws[f'AR{n}'].value = '-' if res4 == 0 else round(res4 / 1000, 3)
+                    ws[f'AU{n}'].value = '-' if res5 == 0 else round(res5 / 1000, 3)
+                    ws[f'AX{n}'].value = '-' if res6 == 0 else round(res6 / 1000, 3)
+                    ws[f'BA{n}'].value = '-' if res7 == 0 else round(res7 / 1000, 3)
+                    ws[f'BD{n}'].value = '-' if res8 == 0 else round(res8 / 1000, 3)
+                    ws[f'BG{n}'].value = '-' if res9 == 0 else round(res9 / 1000, 3)
+                    ws[f'BJ{n}'].value = '-' if res10 == 0 else round(res10 / 1000, 3)
+                    ws[f'BM{n}'].value = '-' if res11 == 0 else round(res11 / 1000, 3)
                 n += 1
                 i += 1
 
@@ -1418,7 +1419,7 @@ class WriterExcelTP(WriterExcel):
 
 
         # 4.10.7 Сводная ведомость тротуаров и пешеходных дорожек
-            sidewalk = v1.get('Тротуар').get('Тип',[])
+            sidewalk = v1.get('Тротуар',{}).get('Тип',[])
             sum_sidewalk = 0
             sum_pedestrian_path = 0
             for tip in sidewalk:
@@ -1734,6 +1735,7 @@ class WriterApplicationCityTP(WriterApplication):
         self.write_bridge()
         self.write_turns()
         self.write_gazon()
+        self.save_file()
 
     def write_roadway (self):
         """заполнеие табилц проезжая часть"""

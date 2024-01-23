@@ -22,13 +22,15 @@ class JsonWorker:
     def read_json_file_info():
         """
         Функция чтения json из файла
-        :return:
+        :return: data
         """
         if os.path.exists(path_file_name_info):
             with open(path_file_name_info, 'r', encoding='utf-8') as file:
                 str_dict = file.read()
-                if str_dict == '':
+                if not str_dict:
                     return {}
                 data = json.loads(str_dict, strict=False)
                 return data
+        else:
+            return {}
 

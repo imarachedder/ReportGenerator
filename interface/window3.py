@@ -11,6 +11,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from interface.preview import Preview
 from interface.json_worker import JsonWorker
 from settings import path_icon_done, path_icon_not_done
+from write_excel_description import WriterExcelTP
 
 
 class Ui_MainWindow3(object):
@@ -178,7 +179,7 @@ class Ui_MainWindow3(object):
 
 
 class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
-    def __init__ (self, title=None, parent=None, data = None, path = None):
+    def __init__ (self, title=None, parent=None, data = None, path = r'C:\Users\sibregion\Desktop'):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Window3, self).__init__(parent)
@@ -188,7 +189,7 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.info = None
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
-        self.result_data = data
+        self.data = data
         self.icon_done = (QtGui.QPixmap(path_icon_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.icon_not_done = (QtGui.QPixmap(path_icon_not_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
 
@@ -208,6 +209,7 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.done_pushButton.clicked.connect(self.preview_window)
         self.set_plain_text_edit(self.read_json_file_info())
 
+
     def check_empty_plain_text_edit(self, obj_plainTextEdit, obj_icon_tab, idx):
         if obj_plainTextEdit.toPlainText() != '':
             obj_icon_tab.addPixmap(self.icon_done[0], self.icon_done[1], self.icon_done[2])
@@ -226,14 +228,14 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
                 'railway_waterway': railway_waterway,
                 'economical_characteristic_road': economical_characteristic_road,
                 'movement_characteristic': movement_characteristic,
-                'area_conditions': area_conditions}
+                'area_conditions': area_conditions} | self.parent.get_info_window2()
 
     def set_plain_text_edit(self, data: dict):
-        self.plainTextEdit_1.setPlainText(data.get('history_match', None))
-        self.plainTextEdit_2.setPlainText(data.get('railway_waterway', None))
-        self.plainTextEdit_3.setPlainText(data.get('economical_characteristic_road', None))
-        self.plainTextEdit_4.setPlainText(data.get('movement_characteristic', None))
-        self.plainTextEdit_5.setPlainText(data.get('area_conditioins', None))
+        self.plainTextEdit_1.setPlainText(data.get('history_match', ''))
+        self.plainTextEdit_2.setPlainText(data.get('railway_waterway', ''))
+        self.plainTextEdit_3.setPlainText(data.get('economical_characteristic_road', ''))
+        self.plainTextEdit_4.setPlainText(data.get('movement_characteristic', ''))
+        self.plainTextEdit_5.setPlainText(data.get('area_conditions', ''))
 
     def back_to_window(self):
         """
@@ -241,19 +243,17 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         :return:
         """
         # ДОПИСАТЬ json_worker
-        JsonWorker.write_json_file_info(self.get_info_from_plain_text_edit() | self.parent.window().get_info_window2())
+        self.write_json_file_info(self.get_info_from_plain_text_edit())
         self.parent.show()
         self.close()
 
     def preview_window(self):
-        info_window2 = self.parent.get_info_window2()
-        info_window3 = self.get_info_from_plain_text_edit()
 
-        data_interface = {
-                    'name_road': self.windowTitle(),
-               } | info_window2 | info_window3  # РАЗОБРАТЬ ДАННЫЕ ИЗ ИНТЕРФЕЙСА И ДАННЫЕ ИЗ БАЗЫ ПО ОТДЕЛЬНЫМ СЛОВАРЯМ
-        self.preview = Preview(self.windowTitle(), parent = self, data=self.result_data, path_dir = self.path_dir, data_interface = data_interface)
+        data_interface = self.get_info_from_plain_text_edit()
+
         self.write_json_file_info(data_interface)
+        self.preview = Preview(title = self.windowTitle(), parent = self, data=self.data, path_dir = self.path_dir,
+                               data_interface = data_interface)
         self.preview.filling_templates(data_interface)
         # self.preview.write_excel(data)
         self.preview.show()

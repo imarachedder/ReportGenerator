@@ -49,10 +49,12 @@ class Preview(QtWidgets.QDialog, Ui_Preview_window):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
         super(Preview, self).__init__(parent)
+        self.setWindowFlags(QtCore.Qt.WindowType.Window)
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowTitle(title)
         self.path_dir = path_dir
-        # self.data = data
+        #self.data = data
+        #self.data_interface = data_interface
         # print(self.data)
         self.title = title
         # todo: выловить ошибку с работой кнопки ОК
@@ -66,14 +68,15 @@ class Preview(QtWidgets.QDialog, Ui_Preview_window):
             print('заполняю тех паспорт')
             print("Вхожу в ", self.path_dir)
             report = WriterExcelTP(data = data, path=self.path_dir, data_interface=data_interface)
-            report.save_file()
-            # apps = WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface)
-            # apps.save_file()
+            #report.save_file()
+            apps = WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface)
+            #apps.save_file()
             print('сохранил файл')
 
             # file = ConvertVisio(path_dir=self.path_dir, filename = data.get('название дороги'))
             # res = MergeFiles(path_dir=self.path_dir, filename=data.get('название дороги'))
         # report.save_file()
+        self.close()
 
     def filling_templates (self, data=None):
         '''
