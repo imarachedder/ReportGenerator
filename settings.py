@@ -8,7 +8,7 @@ path_icon_app = rf'{root_path}\static\icon.png'
 path_file_name_info = r'info.json'
 path_icon_done = rf'{root_path}\static\check_green.png'
 path_icon_not_done = rf'{root_path}\static\check_red.png'
-
+path_logo = rf'{root_path}\static\logo.png'
 # template path's
 # path_template_excel = rf'{root_path}\templates\tp_curr.xlsx'
 path_template_excel = rf'{root_path}\templates\Паспорт_Рамки2(Рамки).xlsx'

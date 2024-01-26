@@ -8,17 +8,18 @@ from openpyxl.drawing.image import Image
 from openpyxl.styles import Alignment, Side, Border, Font
 
 import db
-from settings import path_template_excel, path_template_excel_application
+from settings import path_template_excel, path_template_excel_application, path_logo
 
 
 class WriterExcel:
     def __init__ (self, data: dict = None, path_template_excel = path_template_excel, path = None,
                   data_interface = None):
 
+        self.tip_doc = None
         self.data = data
         if data is None:
             self.data = {}
-        self.wb = load_workbook(path_template_excel, keep_vba = True)
+        self.wb = load_workbook(filename=path_template_excel,keep_vba = True,keep_links = True)
 
         self.path_dir = path
         self.data_interface = data_interface
@@ -33,9 +34,9 @@ class WriterExcel:
     def save_file (self):
         # сохранить файл
         name_file = self.data.get('название дороги','дорога')
-        if '/' in self.data.get('название дороги','дорога') or ':' in self.data.get('название дороги','дорога'):
-            name_file = self.data.get('название дороги','дорога').replace("/", ".").replace(":", ".")[:40]
-        self.wb.save(rf'{self.path_dir}\ТП_{name_file}.xlsm')
+        if '/' in name_file or ':' in name_file:
+            name_file = name_file.replace("/", ".").replace(":", ".")[:40]
+        self.wb.save(rf'{self.path_dir}\{self.tip_doc}_{name_file}.xlsm')
         self.close_file()
 
     def close_file (self):
@@ -46,7 +47,7 @@ class WriterExcel:
 class WriterExcelTP(WriterExcel):
     def __init__ (self, data: dict = None, path = None, data_interface = None):
         super().__init__(data = data, path = path, data_interface = data_interface)
-
+        self.tip_doc = 'ТП'
         # self.msg = QMessageBox()
         # self.msg.setIcon(path_icon_app)
         print("Начал работать")
@@ -454,12 +455,12 @@ class WriterExcelTP(WriterExcel):
                                 val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]):
                             sum6 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
                         res = val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][8]
-                        ws[f'G3{i}'].value = '-' if sum1 == 0 else round(sum1 / 1000, 3)
-                        ws[f'K3{i}'].value = '-' if sum2 == 0 else round(sum2 / 1000, 3)
-                        ws[f'P3{i}'].value = '-' if sum3 == 0 else round(sum3 / 1000, 3)
-                        ws[f'U4{i}'].value = '-' if sum4 == 0 else round(sum4 / 1000, 3)
-                        ws[f'Z4{i}'].value = '-' if sum5 == 0 else round(sum5 / 1000, 3)
-                        ws[f'AE4{i}'].value = '-' if sum6 == 0 else round(sum6 / 1000, 3)
+                        ws[f'G{i}'].value = '-' if sum1 == 0 else round(sum1 / 1000, 3)
+                        ws[f'K{i}'].value = '-' if sum2 == 0 else round(sum2 / 1000, 3)
+                        ws[f'P{i}'].value = '-' if sum3 == 0 else round(sum3 / 1000, 3)
+                        ws[f'U{i}'].value = '-' if sum4 == 0 else round(sum4 / 1000, 3)
+                        ws[f'Z{i}'].value = '-' if sum5 == 0 else round(sum5 / 1000, 3)
+                        ws[f'AE{i}'].value = '-' if sum6 == 0 else round(sum6 / 1000, 3)
                 except Exception as e:
                     # self.msg.setText(f"Ошибка 4.2")
                     # self.msg.setWindowTitle("Ошибка в 9 листе")
@@ -1144,6 +1145,7 @@ class WriterExcelTP(WriterExcel):
         cells_right = ('AU','AZ','BE','BJ','BO')
         total_sum_4_10_2 = {}
         total_sum_4_10_3 = {}
+        total_sum_4_10_4 = {}
         total_sum_4_10_5 = {}
 
         def count_4_10_2 (column, cell, list_obj):
@@ -1258,10 +1260,32 @@ class WriterExcelTP(WriterExcel):
 
         def count_4_10_4(column, cell, list_obj):
             # 4.10.4 паромные переправы
+            row=14
             ferry_crossings = {'самоходные': [0, 0],
                                'буксирные': [0, 0],
                                'канатные': [0, 0],
                                }
+            sum_all = [0, 0]
+
+            for lst in list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []):
+                if lst[0] == 'Самоходные':
+                    ferry_crossings.get('самоходные')[0] += 1
+                    ferry_crossings.get('самоходные')[1] += lst[1]
+                elif lst[0] == 'Буксирные':
+                    ferry_crossings.get('буксирные')[0] += 1
+                    ferry_crossings.get('буксирные')[1] += lst[1]
+                elif lst[0] == 'Канатные':
+                    ferry_crossings.get('канатные')[0] += 1
+                    ferry_crossings.get('канатные')[1] += lst[1]
+            sum_all[0] = len(list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []))
+            sum_all[1] = sum(i[1] for i in list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []))
+            for val in ferry_crossings.values():
+                ws[f'{column}{row}'] = val[0] if val[0] != 0 else '-'
+                ws[f'{cell}{row}'] = val[1] if val[1] != 0 else '-'
+                row += 1
+            ws[f'{column}{row}'] = sum_all[0] if sum_all[0] != 0 else '-'
+            ws[f'{cell}{row}'] = sum_all[1] if sum_all[1] != 0 else '-'
+            return ferry_crossings
 
         def count_4_10_5(column, cell, list_obj):
             # 4.10.5 подпорные стенки
@@ -1330,7 +1354,13 @@ class WriterExcelTP(WriterExcel):
                     total_sum_4_10_3[key][1] += val[1]
                 else:
                     total_sum_4_10_3[key] = val
-
+            ferry_crossing = count_4_10_4(column_right, cell_right, v)
+            for key, val in ferry_crossing.items():
+                if key in total_sum_4_10_4:
+                    total_sum_4_10_4[key][0] += val[0]
+                    total_sum_4_10_4[key][1] += val[1]
+                else:
+                    total_sum_4_10_4[key] = val
             walls = count_4_10_5(column_right, cell_right, v)
             for key, val in walls.items():
                 if key in total_sum_4_10_5:
@@ -1367,6 +1397,17 @@ class WriterExcelTP(WriterExcel):
             total_sum_4_10_3 = [sum(i[0] for i in total_sum_4_10_3.values()),sum(i[1] for i in total_sum_4_10_3.values())]
             ws[f'{column_left}{row}'] = total_sum_4_10_3[0] if total_sum_4_10_3[0] != 0 else '-'
             ws[f'{cell_left}{row}'] = total_sum_4_10_3[1] if total_sum_4_10_3[1] != 0 else '-'
+            #4.10.4
+            ws[f'{column_right}6'] = 'Итого'
+            row=14
+            for k, v in total_sum_4_10_4.items():
+                ws[f'{column_right}{row}'] = v[0] if v[0] != 0 else '-'
+                ws[f'{cell_right}{row}'] = v[1] if v[1] != 0 else '-'
+                row += 1
+            total_sum_4_10_4 = [sum(i[0] for i in total_sum_4_10_4.values()),
+                                sum(i[1] for i in total_sum_4_10_4.values())]
+            ws[f'{column_right}{row}'] = total_sum_4_10_4[0] if total_sum_4_10_4[0] != 0 else '-'
+            ws[f'{cell_right}{row}'] = total_sum_4_10_4[1] if total_sum_4_10_4[1] != 0 else '-'
 
             # 4.10.5
             ws[f'{column_right}29'] = f'Итого'
@@ -1379,32 +1420,35 @@ class WriterExcelTP(WriterExcel):
                                 sum(i[1] for i in total_sum_4_10_5.values())]
             ws[f'{column_right}{row}'] = total_sum_4_10_5[0] if total_sum_4_10_5[0] != 0 else '-'
             ws[f'{cell_right}{row}'] = total_sum_4_10_5[1] if total_sum_4_10_5[1] != 0 else '-'
+
     def write_18 (self):
         """
             TODO  4.10.6  не реализовано
             Описиваем данные по 18 листу
             :return:
         """
+        ws = self.wb['18']
         counter = 0
         counter2 = 1
         count_distr = len(self.data)
-        ws = self.wb['18']
 
         column_tuple_right = ('AP', 'AU', 'AZ', 'BE', 'BJ', 'BM')
         cells_right = ('AP', 'AR', 'AU', 'AW', 'AZ', 'BB', 'BE', 'BG', 'BJ', 'BL')
+        column_tuple_left = ('I', 'L', 'O', 'R', 'U', 'X', 'AA', 'AD')
+
+        res_sum_4_10_6 = [0, 0]
+        res_sum_4_10_7 = [0, 0]
         res_sum_4_10_9 = {}
         res_sum_4_10_8 = {}
-        total_shoulders = 0
-        column_tuple_left = ('I','L','O','R','U','X','AA','AD')
 
-        res_sum_4_10_7 =[0,0]
         for k1, v1 in self.data.items():
+            total_shoulders = 0
             if k1 == 'название дороги':
                 continue
 
             column_l = column_tuple_left[counter]
             column_r = column_tuple_right[counter]
-            #заполнение шапки всех таблиц
+            # заполнение шапки всех таблиц
             if count_distr > 2:
                 ws[f'{column_r}6'] = f'{k1.title()} \n {self.data_interface.get("year", None)} г.'
                 ws[f'{column_l}6'] = f'{k1.title()} \n {self.data_interface.get("year", None)} г.'
@@ -1417,70 +1461,68 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column_r}30'] = f'{self.data_interface.get("year", None)}'
                 ws[f'{column_l}30'] = f'{self.data_interface.get("year", None)}'
 
+            #4.10.6
+            forest_line = v1.get('Лесополоса', {}).get('Тип',[])
 
-        # 4.10.7 Сводная ведомость тротуаров и пешеходных дорожек
-            sidewalk = v1.get('Тротуар',{}).get('Тип',[])
+            dict_forest_belt = {'':0,
+                                '':0,
+                                '':0,
+                                '':0,
+                                '':0,}
+            decorative_forest_line = []
+
+
+            # 4.10.7 Сводная ведомость тротуаров и пешеходных дорожек
+            sidewalk = v1.get('Тротуар',{}).get('Тип', [])
             sum_sidewalk = 0
             sum_pedestrian_path = 0
             for tip in sidewalk:
                 if tip[0] == 'Тротуар':
-                    sum_sidewalk += ((tip[-1][0]-tip[-2][0])*1000 + (tip[-1][1]-tip[-2][1])) / 1000
+                    sum_sidewalk += ((tip[-1][0] - tip[-2][0]) * 1000 + (tip[-1][1] - tip[-2][1])) / 1000
                 elif tip[0] == 'Пешеходная дорожка':
-                    sum_pedestrian_path += ((tip[-1][0]-tip[-2][0])*1000 + (tip[-1][1]-tip[-2][1])) / 1000
+                    sum_pedestrian_path += ((tip[-1][0] - tip[-2][0]) * 1000 + (tip[-1][1] - tip[-2][1])) / 1000
 
             ws[f'{column_l}36'] = round(sum_sidewalk, 3) if sum_sidewalk != 0 else '-'
             ws[f'{column_l}37'] = round(sum_pedestrian_path, 3) if sum_pedestrian_path != 0 else '-'
-            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (sum_sidewalk+sum_pedestrian_path) != 0 else '-'
+            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (sum_sidewalk + sum_pedestrian_path) != 0 else '-'
             res_sum_4_10_7[0] += sum_sidewalk
             res_sum_4_10_7[1] += sum_pedestrian_path
 
             # 4.10.8 Сводная ведомость укрепления обочин
-            reinforced_shoulders = v1.get('Укрепленная часть обочины',{}).get('Тип покрытия',[])
+            reinforced_shoulders = v1.get('Укрепленная часть обочины', {}).get('Тип покрытия', [])
 
-            dict_shoulders: dict[str, int] = {
-                "Асфальтобетонные": 0,
-                "Цементобетонные": 0,
-                "Щебеночные": 0,
-                "Грунтовые": 0,
-                "Ж/б плиты": 0,
-                "щебень/гравий. обр.вяжущим": 0,
-                "Бетон": 0,
-
+            dict_shoulders = {
+                'щебень': 0,
+                "грунтощебень": 0,
+                "асфальтогранулобетон": 0,
+                "цементобетон": 0,
+                "щебень обработанный вяжущими": 0,
+                "гравий": 0,
+                "асфальтобетон": 0,
+                "грунтогравий": 0,
+                "гравий обработанный вяжущими": 0,
+                "грунт укрепленный вяжущими": 0,
+                "битумоминеральные смеси": 0,
+                "другие местные и несвязанные материалы": 0
             }
 
             for lst in reinforced_shoulders:
-                
-                if lst[0].lower() == 'асфальтобетон':
-                    dict_shoulders['Асфальтобетонные'] += lst[1]
-                elif lst[0].lower() == 'цементобетон':
-                    dict_shoulders['Цементобетонные'] += lst[1]
-                elif 'щебень' in lst[0].lower():
-                    dict_shoulders['Щебеночные'] += lst[1]
-                elif 'грунт' in lst[0].lower():
-                    dict_shoulders['Грунтовые'] += lst[1]
-                elif lst[0].lower() == 'ж/б плиты':
-                    dict_shoulders['Ж/б плиты'] += lst[1]
-                elif lst[0].lower() == "щебень/гравий. обр.вяжущим":
-                    dict_shoulders["щебень/гравий. обр.вяжущим"] += lst[1]
-                elif lst[0].lower() == 'бетон':
-                    dict_shoulders["Бетон"] += lst[1]
-                elif lst[0].lower() == 'Засев трав':
-                    dict_shoulders["Засев трав"] += lst[1]
+                dict_shoulders[lst[0].lower()] += lst[1]
                 total_shoulders += lst[1]
 
-            ws[f'{column_r}12'] = total_shoulders/1000 if total_shoulders != 0 else '-'
-            ws[f'{column_r}15'] = dict_shoulders.get('Грунтощебень')/1000 if dict_shoulders.get('Грунтощебень', 0) != 0 else '-'
-            ws[f'{column_r}16'] = dict_shoulders.get('Щебеночные')/1000 if dict_shoulders.get('Щебеночные', 0) != 0 else '-'
-            ws[f'{column_r}17'] = dict_shoulders.get('Бетон')/1000 if dict_shoulders.get('Бетон', 0) != 0 else '-'
-            ws[f'{column_r}18'] = dict_shoulders.get("щебень/гравий. обр.вяжущим")/1000 if dict_shoulders.get("щебень/гравий. обр.вяжущим", 0) != 0 else '-'
-            ws[f'{column_r}24'] = dict_shoulders.get('Асфальтобетонные')/1000 if dict_shoulders.get('Асфальтобетонные', 0) != 0 else '-'
-            ws[f'{column_r}25'] = dict_shoulders.get('Засев трав')/1000 if dict_shoulders.get('Засев трав', 0) != 0 else '-'
+            ws[f'{column_r}12'] = total_shoulders / 1000 if total_shoulders != 0 else '-'
+            for i in range(15, 26):
+                key = list(dict_shoulders.keys())[i - 15]
+                if i == 20:
+                    i = 21
+                ws[f'AI{i}'] = key
+                ws[f'{column_r}{i}'] = dict_shoulders[key] / 1000 if dict_shoulders[key] != 0 else '-'
+
             for k, v in dict_shoulders.items():
                 if k in res_sum_4_10_8:
                     res_sum_4_10_8[k] += v
                 else:
                     res_sum_4_10_8.update({k: v})
-
 
             # 4.10.9 Сводная ведомость съездов (въездов)
 
@@ -1495,12 +1537,8 @@ class WriterExcelTP(WriterExcel):
                 "Булыжник": [0, 0]
             }
 
-
             cell = cells_right[counter2]
-            if len(self.data) > 2:
-                ws[f'{column_r}30'] = f'{k1.title()} \n {self.data_interface.get("year", None)} г.'
-            else:
-                ws[f'{column_r}30'] = f'{self.data_interface.get("year", None)}'
+
             for lst in v1.get('Съезд', {}).get('Тип покрытия', []):
                 if lst[0].lower() == 'асфальтобетон':
                     types.get('Асфальтобетонные')[0] += 1
@@ -1547,18 +1585,18 @@ class WriterExcelTP(WriterExcel):
             column_l = column_tuple_left[counter]
             column_r = column_tuple_right[counter]
             cell = cells_right[counter2]
-            #итог 4_10_8
-            res = sum(res_sum_4_10_8.values())/1000
+
+            # итог 4_10_8
+            res = sum(res_sum_4_10_8.values()) / 1000
             ws[f'{column_r}6'] = 'Итого'
             ws[f'{column_r}12'] = res if res != 0 else '-'
-            ws[f'{column_r}15'] = res_sum_4_10_8.get('Грунтощебень')/1000 if res_sum_4_10_8.get('Грунтощебень', 0) != 0 else '-'
-            ws[f'{column_r}16'] = res_sum_4_10_8.get('Щебеночные')/1000 if res_sum_4_10_8.get('Щебеночные', 0) != 0 else '-'
-            ws[f'{column_r}17'] = res_sum_4_10_8.get('Бетон')/1000 if res_sum_4_10_8.get('Бетон', 0) != 0 else '-'
-            ws[f'{column_r}18'] = res_sum_4_10_8.get("щебень/грав.Xr.вяжущим")/1000 if res_sum_4_10_8.get("щебень/грав.Xr.вяжущим", 0) != 0 else '-'
-            ws[f'{column_r}24'] = res_sum_4_10_8.get('Асфальтобетонные')/1000 if res_sum_4_10_8.get('Асфальтобетонные', 0) != 0 else '-'
-            ws[f'{column_r}25'] = res_sum_4_10_8.get('Засев трав')/1000 if res_sum_4_10_8.get('Засев трав', 0) != 0 else '-'
+            for i in range(15, 26):
+                if i == 20:
+                    continue
+                key = ws[f'AI{i}'].value
+                ws[f'{column_r}{i}'] = res_sum_4_10_8.get(key) / 1000 if res_sum_4_10_8.get(key, 0) != 0 else '-'
 
-            #итог 4_10_7
+            # итог 4_10_7
             ws[f'{column_l}30'] = 'Итого'
             ws[f'{column_l}36'] = res_sum_4_10_7[0]
             ws[f'{column_l}37'] = res_sum_4_10_7[1]
@@ -1567,12 +1605,13 @@ class WriterExcelTP(WriterExcel):
             row = 36
             ws[f'{column_r}30'] = 'Итого'
 
-            for k,v in res_sum_4_10_9.items():
-                ws[f'{column_r}{row}'] = v[0] if v[0] !=0 else '-'
-                ws[f'{cell}{row}'] = round(v[1], 2) if v[1] !=0 else '-'
+            for k, v in res_sum_4_10_9.items():
+                ws[f'{column_r}{row}'] = v[0] if v[0] != 0 else '-'
+                ws[f'{cell}{row}'] = round(v[1], 2) if v[1] != 0 else '-'
                 row += 1
 
-            sum_piece, sum_area = sum(i[0] for i in res_sum_4_10_9.values()), round(sum(i[1] for i in res_sum_4_10_9.values()), 2)
+            sum_piece, sum_area = sum(i[0] for i in res_sum_4_10_9.values()), round(
+                sum(i[1] for i in res_sum_4_10_9.values()), 2)
             ws[f'{column_r}44'] = sum_piece if sum_piece != 0 else '-'
             ws[f'{cell}44'] = sum_area if sum_area != 0 else '-'
 
@@ -1591,6 +1630,7 @@ class WriterExcelTP(WriterExcel):
 class WriterExcelDAD(WriterExcel):
     def __init__ (self, data: dict = None):
         super().__init__(data)
+        self.tip_doc='Диагностика'
 
     def write_titular (self):
         pass
@@ -1686,19 +1726,7 @@ class WriterApplication(WriterExcel):
     def __init__ (self, data: dict = None, path = None, data_interface = None):
         super().__init__(data = data, path_template_excel = path_template_excel_application, path = path,
                          data_interface = data_interface)
-
-    def save_file (self):
-        # сохранить файл
-        if len(self.data.get('название дороги')) > 51 or r'/' in self.data.get(
-                'название дороги') or r':' in self.data.get('название дороги'):
-            self.wb.save(
-                rf"{self.path_dir}\{self.data.get('название дороги', 'Отчет')[:51].replace(r'/', '.').replace(r':', '.')}Приложение_{'город' if self.data_interface.get('tip_passport') == 'city' else 'внегород'}.xlsm")
-            self.close_file()
-            return True
-        self.wb.save(
-            rf"{self.path_dir}\{self.data.get('название дороги', 'Отчет')}Приложение_{'город' if self.data_interface.get('tip_passport') == 'city' else 'внегород'}.xlsm")
-        self.close_file()
-        return True
+        self.tip_doc='Приложение'
 
 
 class WriterApplicationCityTP(WriterApplication):
@@ -2779,7 +2807,7 @@ class WriterApplicationCityTP(WriterApplication):
                             try:
                                 list_sign.append((*k2.split(" ", 1), *v2.get('Способ установки')[idx]))
                             except IndexError:
-                                ic(k2, value)
+                                ic(k1,k2, value)
                                 raise IndexError
             list_sign.sort(key = lambda x: x[-2])
 
@@ -3712,29 +3740,19 @@ def new_titel (name_road, output):
 
 def main ():
     conn = db.Query('OMSK_CITY_2023')  # 'IZHEVSK_CITY_2023'
-    list_errors = []
-    # ['Давыдовка - Охримовка', 'Акимовка-Владимировка-Александровка', 'Строгановка-ХПП', 'Ореховка - Анно-Опанлинка',
-    #  'Надеждино-Волна', 'от а.д М18 Е105-Давыдовка-Атманай', 'Новоалександровка-Воскресенка-Анновка',
-    #  'от а.д Арабка-Астраханка-Мордвиновка-Гирсовка-Степановка Первая-до с.Викторовка',
-    #  'от Приазовское-Девнинское-Александровка-до с.Нечкино', 'Степановка Первая-Молочный лиман',
-    #  'от а.д Девнинское-Новоконстантиновка-Чкалово-Степановка Первая до с.Игоревка', 'Новопокровка-Добровка',
-    #  'М14 Е105 - до с.Вишневое', 'Кирилловка - Степанока Первая_НЕ ДЕЛАТЬ']
 
-    data = conn.get_tp_datas('ул. Интернациональная')  # 'М14 Е105 - до с.Вишневое'
+    data = conn.get_tp_datas('Тест_Голика')  # 'М14 Е105 - до с.Вишневое'
     print(data)
     conn.close_db()
-    diсt_inter = {'year': 2023,
+    diсt_inter = {'year': 2024,
                   'tip_passport': 'city',
-                  'history_match': 'Запорожская область располагается в нижнем течении Днепра. Площадь области составляет 27,1 тыс. км² ,  население на начало 2022 года оценивалось в 1,6 млн человек. Административный центр и крупнейший город — Запорожье.',
-                  'area_conditioins': ' Рельеф Запорожской области  равнинный, почвы преимущественно черноземные. В окрестностях автомобильной дороги распространены чернозёмы обыкновенные, а сама территория , по которому проходит дорога, занята сельскохозяйственными землями.'}
-    reports = WriterExcelTP(data = data, path = r'C:\Users\sibregion\Desktop\test\report\тест_рамок_пдф',
+                  'history_match': '',
+                  'area_conditioins': ''}
+    reports = WriterExcelTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
                             data_interface = diсt_inter)
-    reports.save_file()
-    # apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\report\тест_рамок_пдф',
-    #                                data_interface = diсt_inter)
-    # apps.save_file()
-    # data = conn.get_tp_datas('2595_Дорога к гостиничному комплексу «Заячья усадьба»')
-    # print(list_errors[0])
+    #apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
+    #                               data_interface = diсt_inter)
+
 
     # apps = WriterApplicationCityTP(data = data,
     #                                path = r'C:\Users\sibregion\Desktop\test\report\тест_рамок_пдф\Приложения')

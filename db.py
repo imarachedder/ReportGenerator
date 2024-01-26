@@ -343,7 +343,6 @@
 # if __name__ == '__main__':
 #     main()
 
-
 # -*- coding: utf-8 -*-
 import pymssql
 import pandas as pd
@@ -396,9 +395,10 @@ class Query:
         print(self.road_names['Название'])
         return self.road_names['Название']
 
+
     def get_tp_datas (self, road_name):
         """
-        последовательность объектов:
+         Последовательность объектов:
         {название дороги: название дороги,
         участок_дороги:{
             объект:{
@@ -547,6 +547,7 @@ class Query:
             print(key, value)
         return dad_datas_dict
 
+
     def convert_m_to_km (self, param, list_km):
         '''
         переводит метры в километры с привязкой к километровым знакам
@@ -634,6 +635,7 @@ class Query:
                     continue
             return (int(start_km), start_m), (int(end_km), end_m)
 
+
     def sort_dict_binding (self, res):
         '''
         сортирует словарь с объектами по первой метровой привязке
@@ -655,7 +657,7 @@ class Query:
 def databases():
     request = "select name from sys.databases"
     db = pyodbc.connect(f'Driver={settings.driver}; Server=SIBREGION-SRV2; Trusted_Connection=yes;')
-    print()
+
     db_list = [i[0] for i in db.cursor().execute(request).fetchall()[4:]]
     # print(db_list)
 
@@ -663,12 +665,18 @@ def databases():
     return db_list
 
 def main ():
-    db = Query('OMSK_CITY_2023')  # FKU_VOLGO_VYATSK_1
-    list_roads = databases()
-    # print(list_roads)
+    import time
+    db = Query('ZAP2023')  # FKU_VOLGO_VYATSK_1
+    list_roads = db.set_road_name()
+    #print(list_roads)
     # data = db.get_dad_datas('P-254')  # Р-176 "Вятка" Чебоксары - Йошкар-Ола - Киров - Сыктывкар
-    data_test = db.get_tp_datas('ул. Интернациональная')
-    # print(data_test)
+
+
+    start = time.time()  # точка отсчета времени
+    data_test = db.get_tp_datas(list_roads[1])
+    end = time.time() - start  # собственно время работы программы
+    print(f"{round(end, 1)} секунд")  # вывод времени
+    print(data_test)
 
 
     # test(data)
