@@ -1,31 +1,32 @@
 import math
-from typing import Dict
+import os
 
 import win32com.client
+from PyQt6.QtWidgets import QMessageBox
 from icecream import ic
 from openpyxl import load_workbook
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Alignment, Side, Border, Font
 
 import db
-from settings import path_template_excel, path_template_excel_application, path_logo
+from settings import path_template_excel, path_template_excel_application
 
 
 class WriterExcel:
     def __init__ (self, data: dict = None, path_template_excel = path_template_excel, path = None,
-                  data_interface = None):
-
+                  data_interface = None, parent = None):
+        self.parent = parent
         self.tip_doc = None
         self.data = data
         if data is None:
             self.data = {}
-        self.wb = load_workbook(filename=path_template_excel,keep_vba = True,keep_links = True)
-
+        self.wb = load_workbook(filename = path_template_excel, keep_vba = True, keep_links = True)
         self.path_dir = path
+        self.errors = open(os.path.join(self.path_dir, 'Ошибки.txt'), "a", encoding = "utf-8")
         self.data_interface = data_interface
         if data_interface is None:
             self.data_interface = {'tip_passport': 'city'}
-        # self.msg = QMessageBox()
+        self.msg = QMessageBox()
         self.table_cells_font = Font(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
@@ -33,11 +34,16 @@ class WriterExcel:
 
     def save_file (self):
         # сохранить файл
-        name_file = self.data.get('название дороги','дорога')
+        name_file = self.data.get('название дороги', 'дорога')
         if '/' in name_file or ':' in name_file:
             name_file = name_file.replace("/", ".").replace(":", ".")[:40]
-        self.wb.save(rf'{self.path_dir}\{self.tip_doc}_{name_file}.xlsm')
+        try:
+            self.wb.save(rf'{self.path_dir}\{self.tip_doc}_{name_file}.xlsm')
+        except Exception as e:
+            self.msg.information(self.parent, f"Ошибка", f'Ошибка сохранения файла: {e}',
+                                 QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.NoButton)
         self.close_file()
+
 
     def close_file (self):
         # закрыть файл
@@ -45,19 +51,18 @@ class WriterExcel:
 
 
 class WriterExcelTP(WriterExcel):
-    def __init__ (self, data: dict = None, path = None, data_interface = None):
-        super().__init__(data = data, path = path, data_interface = data_interface)
+    def __init__ (self, data: dict = None, path = None, data_interface = None, parent = None):
+        super().__init__(data = data, path = path, data_interface = data_interface, parent = parent)
         self.tip_doc = 'ТП'
-        # self.msg = QMessageBox()
-        # self.msg.setIcon(path_icon_app)
+
         print("Начал работать")
         # print(self.data_interface)
         #
         # # self.write_pereplet()
-        # print('титульный')
-        # self.write_titular()
-        # print('схема')
-        # self.write_scheme()
+        print('титульный')
+        self.write_titular()
+        print('схема')
+        self.write_scheme()
         print('6 лист')
         self.write_6()
         print('7 лист')
@@ -80,6 +85,8 @@ class WriterExcelTP(WriterExcel):
         self.write_17()
         print('18 лист')
         self.write_18()
+
+        self.errors.close()
         print("сохранение")
         self.save_file()
 
@@ -99,8 +106,8 @@ class WriterExcelTP(WriterExcel):
         """
         ws = self.wb['Титульник (без рамки)']  # выбираем лист
 
-        ws["B4"].value = self.data_interface.get('client', )
-        ws["B22"].value = self.data.get('название дороги')
+        ws["B4"].value = self.data_interface.get('client', 'client')
+        ws["B22"].value = self.data.get('название дороги', 'дорога')
         ws["B31"].value = f"составлена на {self.data_interface.get('year', 'year')} г."
         ws["B33"].value = f"Шифр:{self.data_interface.get('cypher', 'cypher')} "
         ws["B52"].value = f"Омск - {self.data_interface.get('year', 'year')} г."
@@ -109,7 +116,7 @@ class WriterExcelTP(WriterExcel):
                           f'{self.data_interface.get("fio_contractor", "fio_contractor")}________________________'
         ws["AI41"].value = self.data_interface.get('client', 'client')
         ws[
-            "AI46"].value = f'{self.data_interface.get("position_client", "position_client")} {self.data_interface.get("fio_client", "position_client")}' \
+            "AI46"].value = f'{self.data_interface.get("position_client", "position_client")} {self.data_interface.get("fio_client", "fio_client")}' \
                             f'________________________'
 
     def write_scheme (self, ):
@@ -117,17 +124,19 @@ class WriterExcelTP(WriterExcel):
          Заполняет лист "схема"
         :return: None
         """
+        ws = self.wb['Схема']  # выбираем лист
+
         try:
             schema = Image(f"{self.path_dir}\Схема.png")
-            ws = self.wb['Схема']  # выбираем лист
             # schema.width = 1380
             # schema.height = 800
             ws.add_image(schema, 'B5')
+
         except FileNotFoundError:
-            print('Схема не найдена в папке')
-            # self.msg.setText("Не найдена схема")
-            # self.msg.setWindowTitle("Ошибка")
-            # self.msg.exec()
+            self.errors.write(f'{self.tip_doc} Cхема: Файл Схема.png отсутствует в {self.path_dir}\n')
+        # self.msg.information(self.parent, "Файл не найден  ",
+        #                      f'Файл Схема.png отсутствует в {self.path_dir} \n{e}',  QMessageBox.StandardButton.Ok,
+        #                      QMessageBox.StandardButton.NoButton)
 
     def write_6 (self):
         """
@@ -161,17 +170,25 @@ class WriterExcelTP(WriterExcel):
         j = 10
         res = 0
         # 2.1 Наименование дороги: name road
-        ws["O5"].value = self.data.get('название дороги')
-        # try:
+        ws["O5"].value = self.data.get('название дороги', 'дорога')
+
         # 2.2 Участок дороги 1, 2 и т.д., 2.3 протяженность дороги(участка) и 2.5 категория дороги(участка), подъездов
-        ws["AL10"] = self.data.get('название дороги')
+        ws["AL10"] = self.data.get('название дороги', 'дорога')
 
         for key, value in self.data.items():
             if key == 'название дороги':
                 continue
             id_key = list(self.data.keys()).index(key)
-            start_road = value.get('Ось дороги').get('Начало трассы', [])[0][-2]
-            end_road = value.get('Ось дороги').get('Начало трассы', [])[0][-1]
+            try:
+                start_road = value.get('Ось дороги', {}).get('Начало трассы', [])[0][-2]
+                end_road = value.get('Ось дороги', {}).get('Начало трассы', [])[0][-1]
+            except Exception:
+                self.errors.write(f'{self.tip_doc} 6 лист: Проверьте объект "Ось дороги" на участке {key}\n')
+                # self.msg.information(self.parent, f"{self.tip_doc} 6 лист",
+                #                      f'Проверьте объект "Ось дороги" на участке {key}',
+                #                      QMessageBox.StandardButton.Ok,
+                #                      QMessageBox.StandardButton.NoButton)
+
             str_start, str_end = change_start_and_end_obj(start_road, end_road)
             ws[f'B{n}'] = f'2.2 Участок дороги:'
             if len(self.data) > 2:
@@ -203,13 +220,22 @@ class WriterExcelTP(WriterExcel):
             ws[f'B{i}'] = f"{str_start}"
             ws[f'F{i}'] = f"{str_end}"
             length_district = round(
-                (end_road[0] * 1000 + end_road[1] - int(value.get('Ось дороги').get('Начало трассы', [])[0][0])) / 1000,
+                (end_road[0] * 1000 + end_road[1] - int(
+                    value.get('Ось дороги', {}).get('Начало трассы', [])[0][0])) / 1000,
                 3)
             ws[f'J{i}'] = length_district
 
             ws[f'L{n}'] = f"от КМ {str_start} до КМ {str_end}"
-
-            tuple_cateregory = value.get('Граница участка дороги', {}).get('категория а/д', [])
+            try:
+                tuple_cateregory = value.get('Граница участка дороги', {}).get('категория а/д')
+            except KeyError as e:
+                tuple_cateregory = []
+                self.errors.write(f'{self.tip_doc} 6 лист: Проверьте данные в объекте "Граница участка дороги" в поле категории А/Д\n')
+                # self.msg.information(self.parent, f"{self.tip_doc} 6 лист",
+                #                      f'Отсутсвуют данные в объекте "Граница участка дороги" в поле категории А/Д',
+                #                      None, QMessageBox.StandardButton.Ok)
+                # self.msg.setText("Ошибка данных по категории А/Д")
+                # self.msg.exec()
             last_cat = None
             for idx, category in enumerate(tuple_cateregory):
                 if category[-1] == end_road:
@@ -266,10 +292,6 @@ class WriterExcelTP(WriterExcel):
                     last_cat = category
                 j += 2
 
-            # self.msg.setWindowTitle("Ошибка")
-            # self.msg.setText("Ошибка данных по категории А/Д")
-            # self.msg.exec()
-
             res += length_district
             n += 1
             i += 1
@@ -291,59 +313,57 @@ class WriterExcelTP(WriterExcel):
         # заполняет таблицу 2.6 Краткая историческая справка
         ws["AL33"].value = self.data_interface.get('history_match', None)
 
-
     def write_7 (self):
         # 2.7
         ws = self.wb['7']
         counter_distr_soder = 15  # счетчик строк для 2.7
-        column_tuple = ('AX', 'AZ', 'BB', 'BD', 'BF', 'BH', 'BJ', 'BL', 'BN')  # столбцы для 2.8
+        column_tuple = ('AX', 'AZ', 'BB', 'BD', 'BF', 'BH', 'BJ', 'BL')  # столбцы для 2.8
 
         row_name_distr = 15  # счетчик строк для 2.8
         for k1, v1 in self.data.items():
             if k1 == 'название дороги':
                 continue
-            try:
-                for idx, v2 in enumerate(v1.get('Дорожная организация', {}).get('Наименование', [])):
-                    ws[f'B{counter_distr_soder}'] = self.data_interface.get('year', '')
-                    ws[f'E{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Наименование', [])[idx][
-                        0] if v1.get('Дорожная организация', {}).get('Наименование', []) else ''
-                    ws[f'l{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Адрес', [])[idx][
-                        0] if v1.get(
-                        'Дорожная организация', {}).get('Адрес', []) else ''
-                    ws[f'P{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Город', [])[idx][
-                        0] if v1.get(
-                        'Дорожная организация', {}).get('Город', []) else ''
-                    ws[f'V{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][
-                        0] if v1.get('Дорожная организация', {}).get('Начало по оси', []) else ''
-                    ws[f'Y{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][
-                        0] if v1.get(
-                        'Дорожная организация', {}).get('Конец  по оси', []) else ''
-
-                    # начало и конецпо оси должны быть записаны с километровой привязкой км+м
-                    start = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][0].split('+')
-                    end = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][0].split('+')
-
-                    ws[
-                        f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
-                    ws[f'AK{counter_distr_soder}'] = f'=AB{counter_distr_soder}'
-                    counter_distr_soder += 1
-            except Exception as e:
-                print('Ошибка заполнения лист 7 таблицы 2.7', e)
-                # self.msg.setText("Ошибка заполнения таблицы 2.7")
-                # self.msg.setWindowTitle("Ошибка в листе 7")
-                # self.msg.exec()
+            # try:
+            for idx, v2 in enumerate(v1.get('Дорожная организация', {}).get('Наименование', [])):
+                ws[f'B{counter_distr_soder}'] = self.data_interface.get('year', '-')
+                ws[f'E{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Наименование', [])[idx][0] \
+                    if v1.get('Дорожная организация', {}).get('Наименование', False) else '-'
+                ws[f'l{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Адрес', [])[idx][0] if \
+                    v1.get('Дорожная организация', {}).get('Адрес', False) else '-'
+                ws[f'P{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Город', [])[idx][
+                    0] if v1.get('Дорожная организация', {}).get('Город', False) else '-'
+                ws[f'V{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Начало по оси', [])[idx][
+                    0] if v1.get('Дорожная организация', {}).get('Начало по оси', False) else '-'
+                ws[f'Y{counter_distr_soder}'] = v1.get('Дорожная организация', {}).get('Конец  по оси', [])[idx][0] \
+                    if v1.get('Дорожная организация', {}).get('Конец  по оси', False) else '-'
+                # начало и конец по оси должны быть записаны с километровой привязкой км+м
+                try:
+                    start = v1.get('Дорожная организация', {}).get('Начало по оси',[] )[idx][0].split('+')
+                    end = v1.get('Дорожная организация', {}).get('Конец  по оси',[])[idx][0].split('+')
+                except Exception :
+                    start = 0
+                    end = 0
+                    self.errors.write(f"{self.tip_doc} лист 7 таблицы 2.7: Проверьте объект 'Дорожная организация'{v1.get('Дорожная организация', {}).get('Начало по оси', )[idx][0]}")
+                    self.msg.information(self.parent, f"{self.tip_doc} лист 7 таблицы 2.7",
+                                         f"Объект 'Дорожная организация'{v1.get('Дорожная организация', {}).get('Начало по оси', )[idx][0]} некорректно заполнен")
+                ws[
+                    f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
+                ws[f'AK{counter_distr_soder}'] = f'=AB{counter_distr_soder}'
+                counter_distr_soder += 1
+            # except Exception as e:
+            #     print('Ошибка заполнения лист 7 таблицы 2.7', e)
+            # self.msg.setText("Ошибка заполнения таблицы 2.7")
+            # self.msg.setWindowTitle("Ошибка в листе 7")
+            # self.msg.exec()
 
             # 2.8 Таблица основных расстояний (в целых километрах)
             tuple_name = tuple(v1.get('Населенный пункт', {}).get('Наименование', []))
             try:
                 for idx, name in enumerate(tuple_name):
-
                     ws[f'{column_tuple[idx]}4'] = name[0]
                     ws[f'AR{row_name_distr}'] = name[0]
-
-                    iter_column = iter(column_tuple[:len(
-                        tuple_name)])  # итератор столбцов, споймает ошибку если  населенных пунктов будет больше чем указанных столобцов
-
+                    # итератор столбцов, споймает ошибку если населенных пунктов будет больше чем указанных столобцов в Excel
+                    iter_column = iter(column_tuple[:len(tuple_name)])
                     for name1 in tuple_name:
                         '''
                         заполнение расстояний между населенными пунктами, в целых километрах. next(iter) возвращает каждый 
@@ -353,11 +373,12 @@ class WriterExcelTP(WriterExcel):
                             (int(name1[-4]) - int(name[-4])) * 1000 + int(name1[-3]) - int(name[-3])) // 1000 \
                             if name1[2] - name[2] != 0 else '-'
                     row_name_distr += 1
-            except Exception as e:
-                print('Ошибка заполнения лист 7 таблицы 2.8', e)
-                # self.msg.setText("Ошибка заполнения таблицы 2.8")
-                # self.msg.setWindowTitle("Ошибка в листе 7")
-                # self.msg.exec()
+            except Exception :
+                self.errors.write(f"{self.tip_doc} лист 7 таблицf 2.8: Проверьте объект 'Населенный пункт', если их больше 8 значит таблица переполняется\n")
+            #     print('Ошибка заполнения лист 7 таблицы 2.8', e)
+            # self.msg.setText("Ошибка заполнения таблицы 2.8")
+            # self.msg.setWindowTitle("Ошибка в листе 7")
+            # self.msg.exec()
 
     def write_8 (self):
         """
@@ -389,6 +410,7 @@ class WriterExcelTP(WriterExcel):
 
         # Функция для расчета ширины проезжей части
         def calcLengthOfTheWidthOfTheCarriageWay (res, j, key, v):
+            result = 0
             if v == 'Ширина земляного полотна':
                 result = res - int(self.data.get(key).get(v, {}).get('Ширина')[j - 1][8])
                 # if j - 1 == 0:
@@ -396,9 +418,11 @@ class WriterExcelTP(WriterExcel):
                 return result
 
             elif v == 'Ширина проезжей части':
-                result = res - int(self.data.get(key).get(v, {}).get('Ширина ПЧ')[j - 1][8])
+
                 if j - 1 == 0:
                     result += int(self.data.get(key).get(v, {}).get('Ширина ПЧ')[j - 1][8])
+                else:
+                    result = res - int(self.data.get(key).get(v, {}).get('Ширина ПЧ')[j - 1][8])
                 return result
 
         # Счетчик
@@ -430,29 +454,18 @@ class WriterExcelTP(WriterExcel):
 
                 # 4.2 Ширина земляного полотна
                 try:
-                    for j in range(len(val.get('Ширина земляного полотна', {}).get('Ширина', [])), 0,
-                                   -1):
-                        if float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][
-                                     0]) <= 8.0:
+                    for j in range(len(val.get('Ширина земляного полотна', {}).get('Ширина', [])), 0, -1):
+                        if float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]) <= 8.0:
                             sum1 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
-                        elif 8.0 < float(
-                                val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][
-                                    0]) < 10.0:
+                        elif 8.0 < float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]) < 10.0:
                             sum2 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
-                        elif 10.0 <= float(
-                                val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][
-                                    0]) < 12.0:
+                        elif 10.0 <= float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]) < 12.0:
                             sum3 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
-                        elif 12.0 <= float(
-                                val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][
-                                    0]) < 15.0:
+                        elif 12.0 <= float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]) < 15.0:
                             sum4 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
-                        elif 15.0 <= float(
-                                val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][
-                                    0]) < 27.5:
+                        elif 15.0 <= float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]) < 27.5:
                             sum5 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
-                        elif 27.5 <= float(
-                                val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]):
+                        elif 27.5 <= float(val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][0]):
                             sum6 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина земляного полотна')
                         res = val.get('Ширина земляного полотна', {}).get('Ширина', [])[j - 1][8]
                         ws[f'G{i}'].value = '-' if sum1 == 0 else round(sum1 / 1000, 3)
@@ -471,37 +484,36 @@ class WriterExcelTP(WriterExcel):
                 res = val.get('Ось дороги').get('Начало трассы')[0][8]
                 for j in range(len(val.get('Ширина проезжей части', {}).get('Ширина ПЧ', [])), 0,
                                -1):
-                    if float(val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][
-                                 0]) <= 4.0:
+                    if float(val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) <= 4.0:
                         res2 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 4.0 < float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][0]) < 4.5:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 4.5:
                         res3 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 4.5 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][0]) < 6.0:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 6.0:
                         res4 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 6.0 <= float(
-                            val.get('Ширина проезжей части').get('Ширина ПЧ')[j - 1][0]) < 6.6:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 6.6:
                         res5 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 6.6 <= float(
-                            val.get('Ширина проезжей части').get('Ширина ПЧ')[j - 1][0]) < 7.0:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 7.0:
                         res6 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 7.0 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][0]) < 7.5:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 7.5:
                         res7 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 7.5 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][0]) < 9.1:
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]) < 9.1:
                         res8 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 9.1 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][
                                 0]) < 10.0:
                         res9 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 10.0 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][
                                 0]) < 15.1:
                         res10 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
                     elif 15.1 <= float(
-                            val.get('Ширина проезжей части', None).get('Ширина ПЧ')[j - 1][0]):
+                            val.get('Ширина проезжей части', {}).get('Ширина ПЧ')[j - 1][0]):
                         res11 += calcLengthOfTheWidthOfTheCarriageWay(res, j, key, 'Ширина проезжей части')
 
                     res = val.get('Ширина проезжей части').get('Ширина ПЧ')[j - 1][8]
@@ -534,13 +546,14 @@ class WriterExcelTP(WriterExcel):
                        'Железобетонные сборные': 0,
                        'Армобетонные монолитные': 0,
                        'Армобетонные сборные': 0,
-                       'Асфальтобетонные':0,
+                       'Асфальтобетонные': 0,
                        'Щебеночно-мастичные': 0
                        }
             lightweight = {
                 'Асфальтобетонные': 0,
                 'Органоминеральные': 0,
                 'Щебеночные (гравийные), обработанные вяжущим': 0,
+                'асфальтобетон': 0
 
             }
             transition = {
@@ -548,6 +561,7 @@ class WriterExcelTP(WriterExcel):
                 'Грунт и малопрочные каменные материалы, укрепленные вяжущим': 0,
                 'Грунт, укрепленный различными вяжущими и местными материалами': 0,
                 'Булыжный и колотый камень (мостовые)': 0,
+                'щебень/гравий': 0
             }
             lower = {
                 'Грунт': 0,
@@ -561,6 +575,7 @@ class WriterExcelTP(WriterExcel):
 
             tuple_tip = v.get('Граница участка дороги', {}).get('тип дорожной одежды', [])
             tuple_variant = v.get('Граница участка дороги', {}).get('вид покрытия', [])
+
             for idx, tip in enumerate(tuple_tip):
                 # находим следующий тип дорожной одежды
                 if tip == tuple_tip[-1]:
@@ -572,8 +587,15 @@ class WriterExcelTP(WriterExcel):
                 try:
                     type_of_coating[tip[0]][tuple_variant[idx][0]] += ((next_tip[-2][0] - tip[-2][0]) * 1000 + (
                             next_tip[-2][1] - tip[-2][1])) / 1000
-                except KeyError:
-                    ic(tip[0], tuple_variant[idx][0])
+                except Exception as e:
+                    text = ',\n'.join(list(type_of_coating[tip[0]]))
+                    self.msg.information(self.parent, f'{self.tip_doc} 10 лист',
+                                         f'В объекте "Граница участка дороги"{tip[-1]}'
+                                         f' вид покрытия "{tuple_variant[idx][0]}" не совпадает'
+                                         f'с заданными в программе:\n{text}',
+                                         buttons = QMessageBox.StandardButton.Ok,
+                                         defaultButton = QMessageBox.StandardButton.NoButton)
+
             return type_of_coating
 
         ws = self.wb['10']
@@ -600,9 +622,8 @@ class WriterExcelTP(WriterExcel):
                         else:
                             sum_res.update({tip: {material: val}})
 
-
                 row = 8
-                for key,val in result.items():
+                for key, val in result.items():
                     # заполнение всех типов и видов покрытий
                     for material in result.get(key).values():
                         ws[f'{column}{row}'] = material if material != 0 else '-'
@@ -636,7 +657,6 @@ class WriterExcelTP(WriterExcel):
 
                 # ПЕРЕХОДНЫЕ
 
-
                 # ws[f'{column}26'] = result.get('Переходный').get('Щебеночно - гравийно - песчаные') + result.get(
                 #     'Переходный').get('щебень/гравий') \
                 #     if result.get('Переходный').get('Щебеночно - гравийно - песчаные') != 0 or result.get(
@@ -654,7 +674,6 @@ class WriterExcelTP(WriterExcel):
 
                 # НИЗШИЕ
 
-
                 # ws[f'{column}34'] = result.get('Низший').get('Грунт профилированный') \
                 #     if result.get('Низший').get('Грунт профилированный') != 0 else '-'
                 # ws[f'{column}35'] = result.get('Низший').get('грунт') \
@@ -667,13 +686,12 @@ class WriterExcelTP(WriterExcel):
             column = column_tuple[counter]
             ws[f'{column}4'] = 'Итог'
             for key, val in sum_res.items():
-                # заполнение всех типов и видов покрытий
+                # заполнение итог всех типов и видов покрытий
                 for material in sum_res.get(key).values():
                     ws[f'{column}{row}'] = material if material != 0 else '-'
                     row += 1
                 row += 4
 
-        #
         #     ws[f'{column}8'] = sum_res.get('Капитальный').get('цементобетон') if sum_res.get('Капитальный').get(
         #         'цементобетон') != 0 else '-'  # f'=SUM({column_tuple[0]}8:{column_tuple[counter - 1]}8)'
         #     ws[f'{column}13'] = sum_res.get('Капитальный').get('асфальтобетон') if sum_res.get('Капитальный').get(
@@ -740,8 +758,7 @@ class WriterExcelTP(WriterExcel):
             'Автобусные остановки': 0,
             'ПСП': 0,
             'Ограждения': 0,
-            'Сигнальные столбики': 0,
-
+            'Сигнальные столбики': 0
         }
         for k1, v1 in self.data.items():
             if k1 == 'название дороги':
@@ -757,9 +774,20 @@ class WriterExcelTP(WriterExcel):
                 'IV': [0, 0],
                 'V': [0, 0]
             }
-
-            curves_list = v1.get('Кривая', {}).get('R', [])
-            categorys_road_list = v1.get('Граница участка дороги', {}).get('категория а/д', [])
+            try:
+                curves_list = v1.get('Кривая', {}).get('R')
+            except KeyError as e:
+                self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
+                                     'Объект "Кривая" не имеет R',
+                                     QMessageBox.StandardButton.Ok,
+                                     QMessageBox.StandardButton.NoButton)
+            try:
+                categorys_road_list = v1.get('Граница участка дороги', {}).get('категория а/д', )
+            except KeyError as e:
+                self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
+                                     'Объект "Граница участка дороги" не имеет категории а/д',
+                                     QMessageBox.StandardButton.Ok,
+                                     QMessageBox.StandardButton.NoButton)
             dict_counter_and_length_curves = {
                 'IА': [0, 0],
                 'IБ': [0, 0],
@@ -868,27 +896,27 @@ class WriterExcelTP(WriterExcel):
 
             # автопавильоны капитального типа шт
             sum_stop_bus = sum(1 for i in v1.get('Остановка').get('Наличие павильона') if i[0] == 'да') if v1.get(
-                'Остановка', {}).get('Наличие павильона', []) else 0
+                'Остановка', {}).get('Наличие павильона', False) else 0
             sum_total['Автопавильоны'] += sum_stop_bus
             ws[f"{column}14"] = sum_stop_bus if sum_stop_bus != 0 else '-'
 
             # площадки отдыха шт
             sum_recreation_area = sum(
                 1 for i in v1.get('Проезжая часть').get('Назначение') if i[0] == 'площадка отдыха') if v1.get(
-                'Проезжая часть', {}).get('Назначение', []) else 0
+                'Проезжая часть', {}).get('Назначение', False) else 0
             sum_total['Площадки отдыха'] += sum_recreation_area
             ws[f"{column}16"] = sum_recreation_area if sum_recreation_area != 0 else '-'
 
             # площадка для стоянок и остановок автомобилей шт
             sum_parking = sum(1 for i in v1.get('Проезжая часть').get('Назначение') if i[0] == 'парковка') if v1.get(
-                'Проезжая часть', {}).get('Назначение', []) else 0
+                'Проезжая часть', {}).get('Назначение', False) else 0
             sum_total['парковка'] += sum_parking
             ws[f"{column}17"] = sum_parking if sum_parking != 0 else '-'
 
             # освещение дороги км
             sum_light = round(
                 sum(float(x[1]) for x in v1.get('Опоры освещения и контактной сети').get('Статус')) / 1000,
-                3) if v1.get('Опоры освещения и контактной сети', {}).get('Статус', []) else 0
+                3) if v1.get('Опоры освещения и контактной сети', {}).get('Статус', False) else 0
             sum_total['Освещение дорог'] += sum_light
             ws[f"{column}19"] = sum_light if sum_light != 0 else '-'
 
@@ -896,7 +924,7 @@ class WriterExcelTP(WriterExcel):
             sum_line_communications_cabel = round(sum(float(x[1]) for x in
                                                       v1.get('Подземная комуникация').get('Вид коммуникации')) / 1000,
                                                   3) if (
-                v1.get('Подземная комуникация', {}).get('Вид коммуникации', [])) else 0
+                v1.get('Подземная комуникация', {}).get('Вид коммуникации', False)) else 0
             sum_total['кабельные'] += sum_line_communications_cabel
             ws[f"{column}23"] = sum_line_communications_cabel if sum_line_communications_cabel != 0 else '-'
 
@@ -904,7 +932,7 @@ class WriterExcelTP(WriterExcel):
             sum_line_communications_air = round(sum(float(x[1]) for x in
                                                     v1.get('Воздушная коммуникация').get('Вид коммуникации')) / 1000,
                                                 3) if v1.get(
-                'Воздушная коммуникация', {}).get('Вид коммуникации', []) else 0
+                'Воздушная коммуникация', {}).get('Вид коммуникации', False) else 0
             sum_total['воздушные'] += sum_line_communications_air
             ws[f"{column}24"] = sum_line_communications_air if sum_line_communications_air != 0 else '-'
 
@@ -1067,49 +1095,65 @@ class WriterExcelTP(WriterExcel):
         for name_district, obj in self.data.items():
             if name_district == 'название дороги':
                 continue
+
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
-                if value[0] == 'АЗС':
-                    # 4.7.5
-                    ws[f'B{rows_azs}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                        'Адрес') else ''
-                    ws[f'K{rows_azs}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                try:
+                    if value[0] == 'АЗС':
+                        # 4.7.5
+                        ws[f'B{rows_azs}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                            'Адрес', False) else '-'
+                        ws[f'K{rows_azs}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
+                                                                                                             {}).get(
+                            'Привязка по оси', False) else '-'
+                        ws[f'V{rows_azs}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                                                                                                          {}).get(
+                            'Наименование', False) else '-'
+                        rows_azs += 1
+                    elif value[0] == 'Автомойка':
+                        # 4.7.6
+                        ws[f'AJ{rows_car_wash}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание',
                                                                                                          {}).get(
-                        'Привязка по оси') else ''
-                    ws[f'V{rows_azs}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание', {}).get(
-                        'Наименование') else ''
-                    rows_azs += 1
-                elif value[0] == 'Автомойка':
-                    # 4.7.6
-                    ws[f'AJ{rows_car_wash}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                        'Адрес') else ''
-                    ws[f'AS{rows_car_wash}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
-                                                                                                               {}).get(
-                        'Привязка по оси') else ''
-                    ws[f'BD{rows_car_wash}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                            'Адрес') else '-'
+                        ws[f'AS{rows_car_wash}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get(
+                            'Здание',
+                            {}).get(
+                            'Привязка по оси') else '-'
+                        ws[f'BD{rows_car_wash}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get(
+                            'Здание',
+                            {}).get(
+                            'Наименование') else '-'
+                        rows_car_wash += 1
+                    elif value[0] == 'Общественный туалет':
+                        # 4.7.7
+                        ws[f'B{rows_ws}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                            'Адрес') else '-'
+                        ws[f'I{rows_ws}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
                                                                                                             {}).get(
-                        'Наименование') else ''
-                    rows_car_wash += 1
-                elif value[0] == 'Общественный туалет':
-                    # 4.7.7
-                    ws[f'B{rows_ws}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                        'Адрес') else ''
-                    ws[f'I{rows_ws}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
-                                                                                                        {}).get(
-                        'Привязка по оси') else ''
-                    ws[f'N{rows_ws}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание', {}).get(
-                        'Наименование') else ''
-                    rows_ws += 1
-                elif value[0] == 'Кафе/столовая/ресторан':
-                    # 4.7.8
-                    ws[f'AJ{rows_food}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
-                                                                                                        {}).get(
-                        'Наименование') else ''
-                    ws[f'AS{rows_food}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                        'Адрес') else ''
-                    ws[f'BD{rows_food}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
-                                                                                                           {}).get(
-                        'Привязка по оси') else ''
-                    rows_food += 1
+                            'Привязка по оси') else '-'
+                        ws[f'N{rows_ws}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                                                                                                         {}).get(
+                            'Наименование') else '-'
+                        rows_ws += 1
+                    elif value[0] == 'Кафе/столовая/ресторан':
+                        # 4.7.8
+                        ws[f'AJ{rows_food}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
+                                                                                                            {}).get(
+                            'Наименование') else '-'
+                        ws[f'AQ{rows_food}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
+                            'Адрес') else '-'
+                        ws[f'AV{rows_food}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if \
+                            obj.get('Здание', {}).get('Привязка по оси') else '-'
+                except KeyError as e:
+                    self.msg.information(self.parent, "Объект некорректно заполнен",
+                                         f'Объект {value[0]} некорректно заполнен \n {e}',
+                                         QMessageBox.StandardButton.Ok,
+                                         QMessageBox.StandardButton.NoButton)
+                except AttributeError as e:
+                    self.msg.information(self.parent, "Ошибка заполнения ячейки",
+                                         f'не могу заполнить {value[0]} строка {rows_food} \n {e}',
+                                         QMessageBox.StandardButton.Ok,
+                                         QMessageBox.StandardButton.NoButton)
+                rows_food += 1
 
     def write_14 (self):
         ws = self.wb['14']
@@ -1141,8 +1185,8 @@ class WriterExcelTP(WriterExcel):
 
         columns_left = ('J', 'O', 'T', 'Y', 'AD')
         cells_left = ('L', 'Q', 'V', 'AA', 'AF')
-        columns_right = ('AS','AX','BC','BH','BM')
-        cells_right = ('AU','AZ','BE','BJ','BO')
+        columns_right = ('AS', 'AX', 'BC', 'BH', 'BM')
+        cells_right = ('AU', 'AZ', 'BE', 'BJ', 'BO')
         total_sum_4_10_2 = {}
         total_sum_4_10_3 = {}
         total_sum_4_10_4 = {}
@@ -1156,14 +1200,13 @@ class WriterExcelTP(WriterExcel):
                 "Пешеходный переход надземный": [0, 0],
             }
             sum_crosswalk = [0, 0]
-            sum_all = [0,0]
+            sum_all = [0, 0]
 
             for key, value in types_of_structures.items():
 
-
-                #4.10.2
+                # 4.10.2
                 result = list_obj.get(key)
-                if result is not None :
+                if result is not None:
                     types_of_structures.get(key)[0] += 1
                     types_of_structures.get(key)[1] += result.get(list(result.keys())[0])[0][2]
                 if key == 'Тоннель (галерея)':
@@ -1193,9 +1236,9 @@ class WriterExcelTP(WriterExcel):
                 sum_all[0] += types_of_structures.get(key)[0]
                 sum_all[1] += types_of_structures.get(key)[1]
                 # количество пешеходных переходов(суммарно)
-                ws[f'{column}16'] = sum_crosswalk[0] if sum_crosswalk[0]!=0 else '-'
-                ws[f'{cell}16'] = sum_crosswalk[1] if sum_crosswalk[1]!=0 else '-'
-            #всего пешеходных ограждений
+                ws[f'{column}16'] = sum_crosswalk[0] if sum_crosswalk[0] != 0 else '-'
+                ws[f'{cell}16'] = sum_crosswalk[1] if sum_crosswalk[1] != 0 else '-'
+            # всего пешеходных ограждений
             ws[f'{column}21'] = sum_all[0] if sum_all[0] != 0 else '-'
             ws[f'{cell}21'] = sum_all[1] if sum_all[1] != 0 else '-'
             return types_of_structures
@@ -1234,7 +1277,7 @@ class WriterExcelTP(WriterExcel):
             for value in pipes.values():
                 ws[f'{column}{row}'] = value[0] if value[0] != 0 else '-'
                 ws[f'{cell}{row}'] = value[1] if value[1] != 0 else '-'
-                row+=1
+                row += 1
             # ws[f'{column}37'] = pipes.get('Металлические')[0] if \
             #     pipes.get('Металлические')[0] != 0 else '-'
             # ws[f'{cell}37'] = pipes.get('Металлические')[1] if \
@@ -1258,9 +1301,9 @@ class WriterExcelTP(WriterExcel):
             ws[f'{cell}{row}'] = sum_all[1] if sum_all[1] != 0 else '-'
             return pipes
 
-        def count_4_10_4(column, cell, list_obj):
+        def count_4_10_4 (column, cell, list_obj):
             # 4.10.4 паромные переправы
-            row=14
+            row = 14
             ferry_crossings = {'самоходные': [0, 0],
                                'буксирные': [0, 0],
                                'канатные': [0, 0],
@@ -1278,7 +1321,8 @@ class WriterExcelTP(WriterExcel):
                     ferry_crossings.get('канатные')[0] += 1
                     ferry_crossings.get('канатные')[1] += lst[1]
             sum_all[0] = len(list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []))
-            sum_all[1] = sum(i[1] for i in list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []))
+            sum_all[1] = sum(
+                i[1] for i in list_obj.get('Переправа паромная (ледовая)', {}).get('Способ передвижения парома', []))
             for val in ferry_crossings.values():
                 ws[f'{column}{row}'] = val[0] if val[0] != 0 else '-'
                 ws[f'{cell}{row}'] = val[1] if val[1] != 0 else '-'
@@ -1287,15 +1331,15 @@ class WriterExcelTP(WriterExcel):
             ws[f'{cell}{row}'] = sum_all[1] if sum_all[1] != 0 else '-'
             return ferry_crossings
 
-        def count_4_10_5(column, cell, list_obj):
+        def count_4_10_5 (column, cell, list_obj):
             # 4.10.5 подпорные стенки
             row = 37
             retaining_walls = {
-                               'ж\б': [0, 0],
-                               'дерево': [0, 0],
-                               'камень': [0, 0],
-                               'бетон': [0, 0]
-                               }
+                'ж\б': [0, 0],
+                'дерево': [0, 0],
+                'камень': [0, 0],
+                'бетон': [0, 0]
+            }
             sum_all = [0, 0]
             for lst in list_obj.get('Подпорная стенка', {}).get('Материал', []):
                 if lst[0] == 'ж/б':
@@ -1340,7 +1384,7 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column_right}6'] = f'{self.data_interface.get("year", None)}'
                 ws[f'{column_right}29'] = f'{self.data_interface.get("year", None)}'
 
-            types_of_structures = count_4_10_2( column_left, cell_left, v)
+            types_of_structures = count_4_10_2(column_left, cell_left, v)
             for key, val in types_of_structures.items():
                 if key in total_sum_4_10_2:
                     total_sum_4_10_2[key][0] += val[0]
@@ -1369,37 +1413,50 @@ class WriterExcelTP(WriterExcel):
                 else:
                     total_sum_4_10_5[key] = val
             counter += 1
-        #итого
+        # итого
         if len(self.data) > 2:
             column_left = columns_left[counter]
             cell_left = cells_left[counter]
             column_right = columns_right[counter]
             cell_right = cells_right[counter]
-            #4.10.2
+            # 4.10.2
             ws[f'{column_left}6'] = 'Итого'
-            ws[f'{column_left}14'] = total_sum_4_10_2.get('Тоннель (галерея)',[0,0])[0] if total_sum_4_10_2.get('Тоннель (галерея)',[0,0])[0] != 0 else '-'
-            ws[f'{cell_left}14'] = total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[1] if total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[1] != 0 else '-'
-            ws[f'{column_left}16'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] + total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] if total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] + total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] != 0 else '-'
-            ws[f'{cell_left}16'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] + total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] if total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] + total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] != 0 else '-'
-            ws[f'{column_left}19'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] if total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] != 0 else '-'
-            ws[f'{cell_left}19'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1]  if total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] != 0 else '-'
-            ws[f'{column_left}20'] = total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] if total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] != 0 else '-'
-            ws[f'{cell_left}20'] = total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] if total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] != 0 else '-'
+            ws[f'{column_left}14'] = total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[0] if \
+            total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[0] != 0 else '-'
+            ws[f'{cell_left}14'] = total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[1] if \
+            total_sum_4_10_2.get('Тоннель (галерея)', [0, 0])[1] != 0 else '-'
+            ws[f'{column_left}16'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] + \
+                                     total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] if \
+            total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] + \
+            total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] != 0 else '-'
+            ws[f'{cell_left}16'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] + \
+                                   total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] if \
+            total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] + \
+            total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] != 0 else '-'
+            ws[f'{column_left}19'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] if \
+            total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[0] != 0 else '-'
+            ws[f'{cell_left}19'] = total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] if \
+            total_sum_4_10_2.get('Пешеходный переход надземный', [0, 0])[1] != 0 else '-'
+            ws[f'{column_left}20'] = total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] if \
+            total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] != 0 else '-'
+            ws[f'{cell_left}20'] = total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] if \
+            total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] != 0 else '-'
             ws[f'{column_left}21'] = sum(i[0] for i in total_sum_4_10_2.values())
             ws[f'{cell_left}21'] = sum(i[1] for i in total_sum_4_10_2.values())
-            #4.10.3
+            # 4.10.3
             ws[f'{column_left}29'] = f'Итого'
             row = 37
             for k, v in total_sum_4_10_3.items():
                 ws[f'{column_left}{row}'] = v[0] if v[0] != 0 else '-'
                 ws[f'{cell_left}{row}'] = v[1] if v[1] != 0 else '-'
                 row += 1
-            total_sum_4_10_3 = [sum(i[0] for i in total_sum_4_10_3.values()),sum(i[1] for i in total_sum_4_10_3.values())]
+            total_sum_4_10_3 = [sum(i[0] for i in total_sum_4_10_3.values()),
+                                sum(i[1] for i in total_sum_4_10_3.values())]
             ws[f'{column_left}{row}'] = total_sum_4_10_3[0] if total_sum_4_10_3[0] != 0 else '-'
             ws[f'{cell_left}{row}'] = total_sum_4_10_3[1] if total_sum_4_10_3[1] != 0 else '-'
-            #4.10.4
+            # 4.10.4
             ws[f'{column_right}6'] = 'Итого'
-            row=14
+            row = 14
             for k, v in total_sum_4_10_4.items():
                 ws[f'{column_right}{row}'] = v[0] if v[0] != 0 else '-'
                 ws[f'{cell_right}{row}'] = v[1] if v[1] != 0 else '-'
@@ -1461,19 +1518,18 @@ class WriterExcelTP(WriterExcel):
                 ws[f'{column_r}30'] = f'{self.data_interface.get("year", None)}'
                 ws[f'{column_l}30'] = f'{self.data_interface.get("year", None)}'
 
-            #4.10.6
-            forest_line = v1.get('Лесополоса', {}).get('Тип',[])
+            # 4.10.6
+            forest_line = v1.get('Лесополоса', {}).get('Тип', [])
 
-            dict_forest_belt = {'':0,
-                                '':0,
-                                '':0,
-                                '':0,
-                                '':0,}
+            dict_forest_belt = {'': 0,
+                                '': 0,
+                                '': 0,
+                                '': 0,
+                                '': 0, }
             decorative_forest_line = []
 
-
             # 4.10.7 Сводная ведомость тротуаров и пешеходных дорожек
-            sidewalk = v1.get('Тротуар',{}).get('Тип', [])
+            sidewalk = v1.get('Тротуар', {}).get('Тип', [])
             sum_sidewalk = 0
             sum_pedestrian_path = 0
             for tip in sidewalk:
@@ -1484,7 +1540,8 @@ class WriterExcelTP(WriterExcel):
 
             ws[f'{column_l}36'] = round(sum_sidewalk, 3) if sum_sidewalk != 0 else '-'
             ws[f'{column_l}37'] = round(sum_pedestrian_path, 3) if sum_pedestrian_path != 0 else '-'
-            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (sum_sidewalk + sum_pedestrian_path) != 0 else '-'
+            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (
+                                                                                              sum_sidewalk + sum_pedestrian_path) != 0 else '-'
             res_sum_4_10_7[0] += sum_sidewalk
             res_sum_4_10_7[1] += sum_pedestrian_path
 
@@ -1615,7 +1672,6 @@ class WriterExcelTP(WriterExcel):
             ws[f'{column_r}44'] = sum_piece if sum_piece != 0 else '-'
             ws[f'{cell}44'] = sum_area if sum_area != 0 else '-'
 
-
     # def write_linear_graphs(self):
     #     for i in range(len(glob.glob("*.png"))):
     #         print(i)
@@ -1630,7 +1686,7 @@ class WriterExcelTP(WriterExcel):
 class WriterExcelDAD(WriterExcel):
     def __init__ (self, data: dict = None):
         super().__init__(data)
-        self.tip_doc='Диагностика'
+        self.tip_doc = 'Диагностика'
 
     def write_titular (self):
         pass
@@ -1723,15 +1779,15 @@ class WriterExcelDAD(WriterExcel):
 
 
 class WriterApplication(WriterExcel):
-    def __init__ (self, data: dict = None, path = None, data_interface = None):
+    def __init__ (self, data: dict = None, path = None, data_interface = None, parent = None):
         super().__init__(data = data, path_template_excel = path_template_excel_application, path = path,
-                         data_interface = data_interface)
-        self.tip_doc='Приложение'
+                         data_interface = data_interface, parent = parent)
+        self.tip_doc = 'Приложение'
 
 
 class WriterApplicationCityTP(WriterApplication):
-    def __init__ (self, data: dict = None, path = None, data_interface = None):
-        super().__init__(data = data, path = path, data_interface = data_interface)
+    def __init__ (self, data: dict = None, path = None, data_interface = None, parent = None):
+        super().__init__(data = data, path = path, data_interface = data_interface, parent = parent)
 
         self.cells_font_result = Font(name = 'Times New Roman', size = 12, bold = True)
         self.table_cells_font = Font(name = 'Times New Roman', size = 12)
@@ -1743,26 +1799,47 @@ class WriterApplicationCityTP(WriterApplication):
         self.cells_result = Alignment(horizontal = 'right', )
         self.cells_result_value = Alignment(horizontal = 'left')
         print("#############################\nНачал формировать ведомости!\n#############################\n")
+        print('write_roadway')
         self.write_roadway()
+        print('write_separator_strip')
         self.write_separator_strip()
+        print('write_reinforced_shoulders')
         self.write_reinforced_shoulders()
+        print('write_exit_road')
         self.write_exit_road()
+        print('write_other_territories')
         self.write_other_territories()
+        print('write_sidewalk')
         self.write_sidewalk()
+        print('write_border')
         self.write_border()
+        print('write_luke')
         self.write_luke()
+        print('write_other_engineering_structures')
         self.write_other_engineering_structures()
+        print('write_bus_stop')
         self.write_bus_stop()
+        print('write_lighting_poles')
         self.write_lighting_poles()
+        print('write_maf')
         self.write_maf()
+        print('write_signs')
         self.write_signs()
+        print('write_fence')
         self.write_fence()
+        print('write_traffic_light')
         self.write_traffic_light()
+        print('write_communications')
         self.write_communications()
+        print('write_pipes')
         self.write_pipes()
+        print('write_bridge')
         self.write_bridge()
+        print('write_turns')
         self.write_turns()
+        print('write_gazon')
         self.write_gazon()
+        print('сохранение')
         self.save_file()
 
     def write_roadway (self):
@@ -2806,9 +2883,11 @@ class WriterApplicationCityTP(WriterApplication):
                         if value[0] == 'факт':
                             try:
                                 list_sign.append((*k2.split(" ", 1), *v2.get('Способ установки')[idx]))
-                            except IndexError:
-                                ic(k1,k2, value)
-                                raise IndexError
+                            except Exception as e:
+                                ic(e, k1, k2, v2, value)
+                                self.msg.information(self.parent, f'{self.tip_doc} Таблица знаки',
+                                                     f'На участке "{k1}" направление {v2["Направление"][idx][0]}\n'
+                                                     f' Знак {k2}{value[-1]} отсутствует способ установки')
             list_sign.sort(key = lambda x: x[-2])
 
             if len(self.data) > 2:
@@ -3741,7 +3820,7 @@ def new_titel (name_road, output):
 def main ():
     conn = db.Query('OMSK_CITY_2023')  # 'IZHEVSK_CITY_2023'
 
-    data = conn.get_tp_datas('Тест_Голика')  # 'М14 Е105 - до с.Вишневое'
+    data = conn.get_tp_datas('ул.Голика')  # 'М14 Е105 - до с.Вишневое'
     print(data)
     conn.close_db()
     diсt_inter = {'year': 2024,
@@ -3750,9 +3829,8 @@ def main ():
                   'area_conditioins': ''}
     reports = WriterExcelTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
                             data_interface = diсt_inter)
-    #apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
+    # apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
     #                               data_interface = diсt_inter)
-
 
     # apps = WriterApplicationCityTP(data = data,
     #                                path = r'C:\Users\sibregion\Desktop\test\report\тест_рамок_пдф\Приложения')
