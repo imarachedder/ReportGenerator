@@ -7,11 +7,12 @@
 import sys
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtWidgets import QProgressBar
 
 from interface.preview import Preview
 from interface.json_worker import JsonWorker
 from settings import path_icon_done, path_icon_not_done
-from write_excel_description import WriterExcelTP
+from write_excel_description import WriterExcelTP, WriterApplicationCityTP
 
 
 class Ui_MainWindow3(object):
@@ -22,24 +23,23 @@ class Ui_MainWindow3(object):
         self.centralwidget = QtWidgets.QWidget(parent = MainWindow3)
         self.centralwidget.setMaximumSize(QtCore.QSize(800, 600))
         self.centralwidget.setObjectName("centralwidget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setContentsMargins(-1, 9, -1, 1)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.tabWidget = QtWidgets.QTabWidget(parent = self.centralwidget)
-        self.tabWidget.setMaximumSize(QtCore.QSize(800, 600))
+        self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.verticalLayout_6.setContentsMargins(-1, 9, -1, 1)
+        self.verticalLayout_6.setObjectName("verticalLayout_6")
+        self.tabWidget = QtWidgets.QTabWidget(parent=self.centralwidget)
         self.tabWidget.setTabletTracking(True)
         self.tabWidget.setAcceptDrops(False)
         self.tabWidget.setAutoFillBackground(True)
         self.tabWidget.setStyleSheet("QTabBar::tab\n"
-                                     "{\n"
-                                     "background-color:rgba(255, 48, 12,100);\n"
-                                     "\n"
-                                     "}\n"
-                                     "\n"
-                                     "QTabBar::tab:selected\n"
-                                     "{\n"
-                                     "background-color:rgb(255,255,255)\n"
-                                     "}")
+"{\n"
+"background-color:rgba(255, 48, 12,100);\n"
+"\n"
+"}\n"
+"\n"
+"QTabBar::tab:selected\n"
+"{\n"
+"background-color:rgb(255,255,255)\n"
+"}")
         self.tabWidget.setTabPosition(QtWidgets.QTabWidget.TabPosition.North)
         self.tabWidget.setTabShape(QtWidgets.QTabWidget.TabShape.Rounded)
         self.tabWidget.setElideMode(QtCore.Qt.TextElideMode.ElideNone)
@@ -131,7 +131,40 @@ class Ui_MainWindow3(object):
         self.plainTextEdit_5.setCenterOnScroll(False)
         self.plainTextEdit_5.setObjectName("plainTextEdit_5")
         self.verticalLayout_4.addWidget(self.plainTextEdit_5)
-        self.done_pushButton = QtWidgets.QPushButton(parent = self.tab_5)
+        self.tabWidget.addTab(self.tab_5, "")
+        self.verticalLayout_6.addWidget(self.tabWidget)
+        self.horizontalGroupBox = QtWidgets.QGroupBox(parent=self.centralwidget)
+        self.horizontalGroupBox.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.horizontalGroupBox.sizePolicy().hasHeightForWidth())
+        self.horizontalGroupBox.setSizePolicy(sizePolicy)
+        self.horizontalGroupBox.setMinimumSize(QtCore.QSize(17, 17))
+        self.horizontalGroupBox.setMaximumSize(QtCore.QSize(800, 208))
+        self.horizontalGroupBox.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.ArrowCursor))
+        self.horizontalGroupBox.setMouseTracking(False)
+        self.horizontalGroupBox.setLayoutDirection(QtCore.Qt.LayoutDirection.LeftToRight)
+        self.horizontalGroupBox.setAutoFillBackground(False)
+        self.horizontalGroupBox.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.horizontalGroupBox.setFlat(False)
+        self.horizontalGroupBox.setCheckable(False)
+        self.horizontalGroupBox.setChecked(False)
+        self.horizontalGroupBox.setObjectName("horizontalGroupBox")
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalGroupBox)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.back_pushButton = QtWidgets.QPushButton(parent=self.horizontalGroupBox)
+        self.back_pushButton.setObjectName("back_pushButton")
+        self.horizontalLayout.addWidget(self.back_pushButton)
+        self.progressBar = QtWidgets.QProgressBar(parent=self.horizontalGroupBox)
+        self.progressBar.setMaximumSize(QtCore.QSize(725, 16777215))
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setTextVisible(True)
+        self.progressBar.setOrientation(QtCore.Qt.Orientation.Horizontal)
+        self.progressBar.setInvertedAppearance(False)
+        self.progressBar.setObjectName("progressBar")
+        self.horizontalLayout.addWidget(self.progressBar)
+        self.done_pushButton = QtWidgets.QPushButton(parent=self.horizontalGroupBox)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -139,17 +172,17 @@ class Ui_MainWindow3(object):
         self.done_pushButton.setSizePolicy(sizePolicy)
         self.done_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
         self.done_pushButton.setObjectName("done_pushButton")
-        self.verticalLayout_4.addWidget(self.done_pushButton)
-
-        self.back_pushButton = QtWidgets.QPushButton(parent = self.tab_5)
-        sizePolicy.setHeightForWidth(self.back_pushButton.sizePolicy().hasHeightForWidth())
-        self.back_pushButton.setSizePolicy(sizePolicy)
-        self.back_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
-        self.back_pushButton.setObjectName("back_pushButton")
-        self.verticalLayout_4.addWidget(self.back_pushButton)
-
-        self.tabWidget.addTab(self.tab_5, self.icon_tab5, "Топографические условия района")
-        self.horizontalLayout.addWidget(self.tabWidget)
+        self.horizontalLayout.addWidget(self.done_pushButton)
+        self.verticalLayout_6.addWidget(self.horizontalGroupBox)
+        # self.back_pushButton = QtWidgets.QPushButton(parent = self.tab_5)
+        # sizePolicy.setHeightForWidth(self.back_pushButton.sizePolicy().hasHeightForWidth())
+        # self.back_pushButton.setSizePolicy(sizePolicy)
+        # self.back_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
+        # self.back_pushButton.setObjectName("back_pushButton")
+        # self.verticalLayout_4.addWidget(self.back_pushButton)
+        #
+        # self.tabWidget.addTab(self.tab_5, self.icon_tab5, "Топографические условия района")
+        # self.horizontalLayout.addWidget(self.tabWidget)
         MainWindow3.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow3)
@@ -167,16 +200,14 @@ class Ui_MainWindow3(object):
                                   _translate("MainWindow3", "Связь дороги с железнодорожными и водными путями"))
         self.plainTextEdit_3.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3),
-                                  _translate("MainWindow3", "Экономическое и административное значение дороги"))
+                                  _translate("MainWindow3", "Экономическое и административное занчение дороги"))
         self.plainTextEdit_4.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4),
                                   _translate("MainWindow3", "Характеристика движения"))
         self.plainTextEdit_5.setPlaceholderText(_translate("MainWindow3", "Заполните описание"))
-        self.done_pushButton.setText(_translate("MainWindow3", "Готово"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), _translate("MainWindow3", "Топографические условия района"))
         self.back_pushButton.setText(_translate("MainWindow3", "Назад"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5),
-                                  _translate("MainWindow3", "Топографические условия района"))
-
+        self.done_pushButton.setText(_translate("MainWindow3", "Готово"))
 
 class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
     def __init__ (self, title=None, parent=None, data = None, path = r'C:\Users\sibregion\Desktop'):
@@ -193,7 +224,6 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.icon_done = (QtGui.QPixmap(path_icon_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.icon_not_done = (QtGui.QPixmap(path_icon_not_done), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
 
-
         self.plainTextEdit_1.textChanged.connect(
             lambda: self.check_empty_plain_text_edit(self.plainTextEdit_1, self.icon_tab1, 0))
         self.plainTextEdit_2.textChanged.connect(
@@ -206,9 +236,23 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
             lambda: self.check_empty_plain_text_edit(self.plainTextEdit_5, self.icon_tab5, 4))
 
         self.back_pushButton.clicked.connect(self.back_to_window)
-        self.done_pushButton.clicked.connect(self.preview_window)
+        #
+        #self.done_pushButton.clicked.connect(self.preview_window)
+        self.done_pushButton.clicked.connect(lambda: self.write_excel(data=data, data_interface = self.get_info_from_plain_text_edit()))
         self.set_plain_text_edit(self.read_json_file_info())
 
+    def write_excel (self, data=None, data_interface = None):
+        if data is None:
+            data = {}
+        if self.parent.tp_checkBox.isChecked():
+            print('заполняю тех паспорт')
+            print("Вхожу в ", self.path_dir)
+            WriterExcelTP(data = data, path=self.path_dir, data_interface=data_interface, parent=self)
+            #report.save_file()
+            print('заполняю приложение')
+            WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface, parent=self)
+            #apps.save_file()
+            print('сохранил файл')
 
     def check_empty_plain_text_edit(self, obj_plainTextEdit, obj_icon_tab, idx):
         if obj_plainTextEdit.toPlainText() != '':
@@ -247,6 +291,7 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.parent.show()
         self.close()
 
+    #отключил превью окно
     def preview_window(self):
 
         data_interface = self.get_info_from_plain_text_edit()
