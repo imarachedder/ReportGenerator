@@ -67,9 +67,10 @@ class Preview(QtWidgets.QDialog, Ui_Preview_window):
         if self.parent().parent.tp_checkBox.isChecked():
             print('заполняю тех паспорт')
             print("Вхожу в ", self.path_dir)
-            report = WriterExcelTP(data = data, path=self.path_dir, data_interface=data_interface)
+            WriterExcelTP(data = data, path=self.path_dir, data_interface=data_interface,parent = self)
             #report.save_file()
-            apps = WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface)
+            print('заполняю приложение')
+            WriterApplicationCityTP(data=data, path = self.path_dir, data_interface=data_interface, parent = self)
             #apps.save_file()
             print('сохранил файл')
 
