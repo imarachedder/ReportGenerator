@@ -272,7 +272,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
             self.check_tip_document)  # при нажатии кнопки далее проверяется выбран ли тип документ
         # self.tp_checkBox.toggled['bool'].connect(self.tp_checkbox_true)     # проверка кнопки ТП
         # self.dad_checkBox.toggled['bool'].connect(self.dad_checkbox_true)  # проверка кнопки диагностика
-        self.path_dir = settings.root_path
+        self.path_dir = settings.ROOT_PATH
 
         self.cance_pushButton.clicked.connect(self.back_to_win)
         self.contractor_lineEdit.setText('ООО "Сибирь Регион"')  # значение по умолчанию
@@ -340,7 +340,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
 
         path_dir = self.path_dir
         if path_dir == '':
-            path_dir = settings.root_path
+            path_dir = settings.ROOT_PATH
         client = self.client_lineEdit.text()
         fio_client = self.client_boss_lineEdit.text()
         position_client = self.position_boss_clients_lineEdit.text()
@@ -392,9 +392,9 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
             else:
                 try:
                     if self.road_city_radioButton.isChecked():
-                        self.request = db.Query(self.database_name)
-                        self.data = self.request.get_tp_datas(self.title) # записываем результат в переменную
-                        print(self.data)
+                       # self.request = db.Query(self.database_name)
+                       # self.data = self.request.get_tp_datas(self.title) # записываем результат в переменную
+                        #print(self.data)
                         print("Сбор данных по городской дороге успешно выполнен!")
                     # elif self.roads_automobile_radioButton.isChecked():
                     #     self.request = db.Query(self.database_name)
