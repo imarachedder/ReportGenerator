@@ -106,17 +106,17 @@ class WriterExcelTP(WriterExcel):
         """
         ws = self.wb['Титульник (без рамки)']  # выбираем лист
 
-        ws["B4"].value = self.data_interface.get('client', 'client')
+        ws["B4"].value = self.data_interface.get('client', 'Заказчик')
         ws["B22"].value = self.data.get('название дороги', 'дорога')
-        ws["B31"].value = f"составлена на {self.data_interface.get('year', 'year')} г."
-        ws["B33"].value = f"Шифр:{self.data_interface.get('cypher', 'cypher')} "
-        ws["B52"].value = f"Омск - {self.data_interface.get('year', 'year')} г."
-        ws["B41"].value = self.data_interface.get('contractor', 'contractor')
-        ws["B46"].value = f'{self.data_interface.get("position_contractor", "position_contractor")} ' \
-                          f'{self.data_interface.get("fio_contractor", "fio_contractor")}________________________'
-        ws["AI41"].value = self.data_interface.get('client', 'client')
+        ws["B31"].value = f"составлена на {self.data_interface.get('year', 'год')} г."
+        ws["B33"].value = f"Шифр:{self.data_interface.get('cypher', 'шифр')} "
+        ws["B52"].value = f"Омск - {self.data_interface.get('year', 'год')} г."
+        ws["B41"].value = self.data_interface.get('contractor', 'Подрядчик')
+        ws["B46"].value = f'{self.data_interface.get("position_contractor", "Должность подрядчика")} ' \
+                          f'{self.data_interface.get("fio_contractor", "ФИО подрядчика")}________________________'
+        ws["AI41"].value = self.data_interface.get('client', 'Заказчик')
         ws[
-            "AI46"].value = f'{self.data_interface.get("position_client", "position_client")} {self.data_interface.get("fio_client", "fio_client")}' \
+            "AI46"].value = f'{self.data_interface.get("position_client", "Должность заказчика")} {self.data_interface.get("fio_client", "ФИО заказчика")}' \
                             f'________________________'
 
     def write_scheme (self, ):
@@ -230,7 +230,7 @@ class WriterExcelTP(WriterExcel):
                 tuple_cateregory = value.get('Граница участка дороги', {}).get('категория а/д')
             except KeyError as e:
                 tuple_cateregory = []
-                self.errors.write(f'{self.tip_doc} 6 лист: Проверьте данные в объекте "Граница участка дороги" в поле категории А/Д\n')
+                self.errors.write(f'{self.tip_doc} 6 лист: Проверьте данные в объекте "Граница участка дороги" в поле категория А/Д\n')
                 # self.msg.information(self.parent, f"{self.tip_doc} 6 лист",
                 #                      f'Отсутсвуют данные в объекте "Граница участка дороги" в поле категории А/Д',
                 #                      None, QMessageBox.StandardButton.Ok)
@@ -344,8 +344,8 @@ class WriterExcelTP(WriterExcel):
                     start = 0
                     end = 0
                     self.errors.write(f"{self.tip_doc} лист 7 таблицы 2.7: Проверьте объект 'Дорожная организация'{v1.get('Дорожная организация', {}).get('Начало по оси', )[idx][0]}")
-                    self.msg.information(self.parent, f"{self.tip_doc} лист 7 таблицы 2.7",
-                                         f"Объект 'Дорожная организация'{v1.get('Дорожная организация', {}).get('Начало по оси', )[idx][0]} некорректно заполнен")
+                    # self.msg.information(self.parent, f"{self.tip_doc} лист 7 таблицы 2.7",
+                    #                      f"Объект 'Дорожная организация'{v1.get('Дорожная организация', {}).get('Начало по оси', )[idx][0]} некорректно заполнен")
                 ws[
                     f'AB{counter_distr_soder}'] = f'{((int(end[0]) - int(start[0])) * 1000 + int(end[1]) - int(start[1])) / 1000}'
                 ws[f'AK{counter_distr_soder}'] = f'=AB{counter_distr_soder}'
@@ -430,7 +430,7 @@ class WriterExcelTP(WriterExcel):
 
         ws = self.wb['9']
         # 4.1 Топографические условия района проложения автомобильной дороги
-        ws['B7'] = self.data_interface.get('area_conditioins')
+        ws['B7'] = self.data_interface.get('area_conditions')
         # 4.2 Ширина земляного полотна
         # 4.3 Характеристика проезжей части
         # 4.3.1 Ширина проезжей части
@@ -475,10 +475,11 @@ class WriterExcelTP(WriterExcel):
                         ws[f'Z{i}'].value = '-' if sum5 == 0 else round(sum5 / 1000, 3)
                         ws[f'AE{i}'].value = '-' if sum6 == 0 else round(sum6 / 1000, 3)
                 except Exception as e:
+                    self.errors.write(f'{self.tip_doc} лист 9: 4.2 Ширина земляного полотна {e}\n')
                     # self.msg.setText(f"Ошибка 4.2")
                     # self.msg.setWindowTitle("Ошибка в 9 листе")
                     # self.msg.exec()
-                    raise Exception
+
                     # 4.3 Характеристика проезжей части
                     # 4.3.1 Ширина проезжей части
                 res = val.get('Ось дороги').get('Начало трассы')[0][8]
@@ -588,13 +589,16 @@ class WriterExcelTP(WriterExcel):
                     type_of_coating[tip[0]][tuple_variant[idx][0]] += ((next_tip[-2][0] - tip[-2][0]) * 1000 + (
                             next_tip[-2][1] - tip[-2][1])) / 1000
                 except Exception as e:
-                    text = ',\n'.join(list(type_of_coating[tip[0]]))
-                    self.msg.information(self.parent, f'{self.tip_doc} 10 лист',
-                                         f'В объекте "Граница участка дороги"{tip[-1]}'
+                    #text = ',\n'.join(list(type_of_coating[tip[0]]))
+                    self.errors.write(f'{self.tip_doc} 10 лист 4.3.2 В объекте "Граница участка дороги"{tip[-1]}'
                                          f' вид покрытия "{tuple_variant[idx][0]}" не совпадает'
-                                         f'с заданными в программе:\n{text}',
-                                         buttons = QMessageBox.StandardButton.Ok,
-                                         defaultButton = QMessageBox.StandardButton.NoButton)
+                                         f'с заданными в программе')
+                    # self.msg.information(self.parent, f'{self.tip_doc} 10 лист ',
+                    #                      f'В объекте "Граница участка дороги"{tip[-1]}'
+                    #                      f' вид покрытия "{tuple_variant[idx][0]}" не совпадает'
+                    #                      f'с заданными в программе:\n{text}',
+                    #                      buttons = QMessageBox.StandardButton.Ok,
+                    #                      defaultButton = QMessageBox.StandardButton.NoButton)
 
             return type_of_coating
 
@@ -625,7 +629,9 @@ class WriterExcelTP(WriterExcel):
                 row = 8
                 for key, val in result.items():
                     # заполнение всех типов и видов покрытий
-                    for material in result.get(key).values():
+                    ws[f'B{row-1}'] = key
+                    for key_material,material in val.items():
+                        ws[f'B{row}'] = key_material
                         ws[f'{column}{row}'] = material if material != 0 else '-'
                         row += 1
                     row += 4
@@ -738,7 +744,9 @@ class WriterExcelTP(WriterExcel):
         #         'грунт') != 0 else '-'  # f'=SUM({column_tuple[0]}34:{column_tuple[counter - 1]}35)'
 
     def write_11 (self):
-
+        '''
+        TODO: таблица 4.4 посмотреть можно ли оптимизировать
+        '''
         ws = self.wb['11']
         # заполнение 11 листа
         counter = 0
@@ -775,19 +783,21 @@ class WriterExcelTP(WriterExcel):
                 'V': [0, 0]
             }
             try:
-                curves_list = v1.get('Кривая', {}).get('R')
+                curves_list = [i for i in v1.get('Кривая', {}).get('R') if i[3] == 146]
             except KeyError as e:
-                self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
-                                     'Объект "Кривая" не имеет R',
-                                     QMessageBox.StandardButton.Ok,
-                                     QMessageBox.StandardButton.NoButton)
+                self.errors.write(f'{self.tip_doc} 11 лист таблица 4.4 oбъект "Кривая" не имеет R')
+                # self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
+                #                      'Объект "Кривая" не имеет R',
+                #                      QMessageBox.StandardButton.Ok,
+                #                      QMessageBox.StandardButton.NoButton)
             try:
                 categorys_road_list = v1.get('Граница участка дороги', {}).get('категория а/д', )
             except KeyError as e:
-                self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
-                                     'Объект "Граница участка дороги" не имеет категории а/д',
-                                     QMessageBox.StandardButton.Ok,
-                                     QMessageBox.StandardButton.NoButton)
+                self.errors.write(f'{self.tip_doc} 11 лист таблица 4.4 Объект "Граница участка дороги" не имеет категории а/д')
+                # self.msg.information(self.parent, f'{self.tip_doc} 11 лист таблица 4.4',
+                #                      'Объект "Граница участка дороги" не имеет категории а/д',
+                #                      QMessageBox.StandardButton.Ok,
+                #                      QMessageBox.StandardButton.NoButton)
             dict_counter_and_length_curves = {
                 'IА': [0, 0],
                 'IБ': [0, 0],
@@ -806,10 +816,7 @@ class WriterExcelTP(WriterExcel):
                     next_category = categorys_road_list[idx % len(categorys_road_list) + 1]
                 for curve in curves_list:
                     # посчитать количество и протяженность кривых
-
-                    if curve[3] == 146 and category[-2] <= curve[-2] <= next_category[-2] and category[-1] <= curve[
-                        -1] <= \
-                            next_category[-1]:
+                    if category[-2] <= curve[-2] <= next_category[-2] and category[-1] <= curve[-1] <= next_category[-1]:
                         if category[0] == 'IА' and 0.0 < abs(float(curve[0])) < 1200.0:
                             dict_counter_and_length_curves['IА'][0] += 1
                             dict_counter_and_length_curves['IА'][1] += curve[1]
@@ -1061,19 +1068,19 @@ class WriterExcelTP(WriterExcel):
 
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
 
-                if value[0] in ['Автовокзалы', 'Автостанции']:
+                if value[0] == 'Автостанция/автовокзал':
                     # 4.7.1
                     ws[f'B{rows_avtovokzal}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
                     ws[f'I{rows_avtovokzal}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
                     ws[f'N{rows_avtovokzal}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
                     rows_avtovokzal += 1
-                elif value[0] in ['пост ГИБДД', 'пост ГИБДД/КПД']:
+                elif value[0] == 'Перецепной КДП/пост ГИБДД':
                     # 4.7.2
                     ws[f'AJ{rows_gbdd}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
                     ws[f'AS{rows_gbdd}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
                     ws[f'BA{rows_gbdd}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0]
                     rows_gbdd += 1
-                elif value[0] == 'Гостиница/отель/мотель':
+                elif value[0] == 'Гостиница/мотель/кемпинг':
                     # 4.7.4
                     ws[f'B{rows_sto}'] = obj.get('Здание', {}).get('Наименование')[idx][0]
                     ws[f'I{rows_sto}'] = obj.get('Здание', {}).get('Адрес')[idx][0]
@@ -1109,50 +1116,52 @@ class WriterExcelTP(WriterExcel):
                                                                                                           {}).get(
                             'Наименование', False) else '-'
                         rows_azs += 1
-                    elif value[0] == 'Автомойка':
+                    elif value[0] == 'Моечный пункт':
                         # 4.7.6
                         ws[f'AJ{rows_car_wash}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание',
                                                                                                          {}).get(
-                            'Адрес') else '-'
+                            'Адрес',False) else '-'
                         ws[f'AS{rows_car_wash}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get(
                             'Здание',
                             {}).get(
-                            'Привязка по оси') else '-'
+                            'Привязка по оси',False) else '-'
                         ws[f'BD{rows_car_wash}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get(
                             'Здание',
                             {}).get(
-                            'Наименование') else '-'
+                            'Наименование',False) else '-'
                         rows_car_wash += 1
                     elif value[0] == 'Общественный туалет':
                         # 4.7.7
                         ws[f'B{rows_ws}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                            'Адрес') else '-'
+                            'Адрес',False) else '-'
                         ws[f'I{rows_ws}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
                                                                                                             {}).get(
-                            'Привязка по оси') else '-'
+                            'Привязка по оси',False) else '-'
                         ws[f'N{rows_ws}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
                                                                                                          {}).get(
-                            'Наименование') else '-'
+                            'Наименование',False) else '-'
                         rows_ws += 1
-                    elif value[0] == 'Кафе/столовая/ресторан':
+                    elif value[0] == 'Ресторан/кафе/столовая':
                         # 4.7.8
                         ws[f'AJ{rows_food}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
                                                                                                             {}).get(
-                            'Наименование') else '-'
+                            'Наименование',False) else '-'
                         ws[f'AQ{rows_food}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                            'Адрес') else '-'
+                            'Адрес',False) else '-'
                         ws[f'AV{rows_food}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if \
-                            obj.get('Здание', {}).get('Привязка по оси') else '-'
+                            obj.get('Здание', {}).get('Привязка по оси',False) else '-'
                 except KeyError as e:
-                    self.msg.information(self.parent, "Объект некорректно заполнен",
-                                         f'Объект {value[0]} некорректно заполнен \n {e}',
-                                         QMessageBox.StandardButton.Ok,
-                                         QMessageBox.StandardButton.NoButton)
+                    self.errors.write(f'Объект {value[0]}({value[-2]}) некорректно заполнен \n')
+                    # self.msg.information(self.parent, "Объект некорректно заполнен",
+                    #                      f'Объект {value[0]} некорректно заполнен \n {e}',
+                    #                      QMessageBox.StandardButton.Ok,
+                    #                      QMessageBox.StandardButton.NoButton)
                 except AttributeError as e:
-                    self.msg.information(self.parent, "Ошибка заполнения ячейки",
-                                         f'не могу заполнить {value[0]} строка {rows_food} \n {e}',
-                                         QMessageBox.StandardButton.Ok,
-                                         QMessageBox.StandardButton.NoButton)
+                    self.errors.write(f'не могу заполнить {value[0]} строка {rows_food} \n')
+                    # self.msg.information(self.parent, "Ошибка заполнения ячейки",
+                    #                      f'не могу заполнить {value[0]} строка {rows_food} \n {e}',
+                    #                      QMessageBox.StandardButton.Ok,
+                    #                      QMessageBox.StandardButton.NoButton)
                 rows_food += 1
 
     def write_14 (self):
@@ -1162,16 +1171,16 @@ class WriterExcelTP(WriterExcel):
             if name_district == 'название дороги':
                 continue
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
-                if value[0] == 'Пункты первой медицинской помощи/почта/телефон':
+                if value[0] == 'Пункт первой медпомощи/почта/телефон':
                     # 4.7.5
                     ws[f'B{rows_medical}'] = obj.get('Здание', {}).get('Адрес')[idx][0] if obj.get('Здание', {}).get(
-                        'Адрес') else '-'
+                        'Адрес',False) else '-'
                     ws[f'O{rows_medical}'] = obj.get('Здание', {}).get('Привязка по оси')[idx][0] if obj.get('Здание',
                                                                                                              {}).get(
-                        'Привязка по оси') else '-'
+                        'Привязка по оси',False) else '-'
                     ws[f'Y{rows_medical}'] = obj.get('Здание', {}).get('Наименование')[idx][0] if obj.get('Здание',
                                                                                                           {}).get(
-                        'Наименование') else '-'
+                        'Наименование',False) else '-'
                     rows_medical += 1
 
     def write_17 (self):
@@ -1441,8 +1450,9 @@ class WriterExcelTP(WriterExcel):
             total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[0] != 0 else '-'
             ws[f'{cell_left}20'] = total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] if \
             total_sum_4_10_2.get('Пешеходный переход подземный', [0, 0])[1] != 0 else '-'
-            ws[f'{column_left}21'] = sum(i[0] for i in total_sum_4_10_2.values())
-            ws[f'{cell_left}21'] = sum(i[1] for i in total_sum_4_10_2.values())
+            sum_all = [sum(i[0] for i in total_sum_4_10_2.values()),sum(i[1] for i in total_sum_4_10_2.values())]
+            ws[f'{column_left}21'] =  sum_all[0]
+            ws[f'{cell_left}21'] = sum_all[1]
             # 4.10.3
             ws[f'{column_left}29'] = f'Итого'
             row = 37
@@ -1540,8 +1550,7 @@ class WriterExcelTP(WriterExcel):
 
             ws[f'{column_l}36'] = round(sum_sidewalk, 3) if sum_sidewalk != 0 else '-'
             ws[f'{column_l}37'] = round(sum_pedestrian_path, 3) if sum_pedestrian_path != 0 else '-'
-            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (
-                                                                                              sum_sidewalk + sum_pedestrian_path) != 0 else '-'
+            ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (sum_sidewalk + sum_pedestrian_path) != 0 else '-'
             res_sum_4_10_7[0] += sum_sidewalk
             res_sum_4_10_7[1] += sum_pedestrian_path
 
@@ -1657,7 +1666,8 @@ class WriterExcelTP(WriterExcel):
             ws[f'{column_l}30'] = 'Итого'
             ws[f'{column_l}36'] = res_sum_4_10_7[0]
             ws[f'{column_l}37'] = res_sum_4_10_7[1]
-            ws[f'{column_l}39'] = sum(res_sum_4_10_7)
+            sum_all_4_10_7 = sum(res_sum_4_10_7)
+            ws[f'{column_l}39'] = sum_all_4_10_7 if sum_all_4_10_7 !=0 else '-'
             # итог 4_10_9
             row = 36
             ws[f'{column_r}30'] = 'Итого'
@@ -2885,9 +2895,11 @@ class WriterApplicationCityTP(WriterApplication):
                                 list_sign.append((*k2.split(" ", 1), *v2.get('Способ установки')[idx]))
                             except Exception as e:
                                 ic(e, k1, k2, v2, value)
-                                self.msg.information(self.parent, f'{self.tip_doc} Таблица знаки',
-                                                     f'На участке "{k1}" направление {v2["Направление"][idx][0]}\n'
+                                self.errors.write(f'{self.tip_doc} Таблица знаки На участке "{k1}" направление {v2["Направление"][idx][0]}'
                                                      f' Знак {k2}{value[-1]} отсутствует способ установки')
+                                # self.msg.information(self.parent, f'{self.tip_doc} Таблица знаки',
+                                #                      f'На участке "{k1}" направление {v2["Направление"][idx][0]}\n'
+                                #                      f' Знак {k2}{value[-1]} отсутствует способ установки')
             list_sign.sort(key = lambda x: x[-2])
 
             if len(self.data) > 2:
