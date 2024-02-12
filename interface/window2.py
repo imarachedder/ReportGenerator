@@ -8,21 +8,23 @@ import datetime
 import sys
 
 from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import QThreadPool
 from PyQt6.QtWidgets import QMessageBox
 
 import db
 import settings
 from interface.json_worker import JsonWorker
 from interface.window3 import Window3
+from interface.worker import Worker
 
 
 class Ui_MainWindow2(object):
-    def setupUi(self, MainWindow2):
+    def setupUi (self, MainWindow2):
         MainWindow2.setObjectName("MainWindow2")
         MainWindow2.resize(520, 380)
         MainWindow2.setMinimumSize(QtCore.QSize(520, 380))
         MainWindow2.setMaximumSize(QtCore.QSize(520, 380))
-        self.centralwidget = QtWidgets.QWidget(parent=MainWindow2)
+        self.centralwidget = QtWidgets.QWidget(parent = MainWindow2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
                                            QtWidgets.QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -33,7 +35,7 @@ class Ui_MainWindow2(object):
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.label = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label = QtWidgets.QLabel(parent = self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -51,11 +53,11 @@ class Ui_MainWindow2(object):
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
-        self.road_city_radioButton = QtWidgets.QRadioButton(parent=self.centralwidget)
+        self.road_city_radioButton = QtWidgets.QRadioButton(parent = self.centralwidget)
         self.road_city_radioButton.setEnabled(False)
         self.road_city_radioButton.setObjectName("road_city_radioButton")
         self.verticalLayout.addWidget(self.road_city_radioButton)
-        self.roads_automobile_radioButton = QtWidgets.QRadioButton(parent=self.centralwidget)
+        self.roads_automobile_radioButton = QtWidgets.QRadioButton(parent = self.centralwidget)
         self.roads_automobile_radioButton.setEnabled(False)
         self.roads_automobile_radioButton.setObjectName("roads_automobile_radioButton")
         self.verticalLayout.addWidget(self.roads_automobile_radioButton)
@@ -65,10 +67,10 @@ class Ui_MainWindow2(object):
         self.horizontalLayout_4.addItem(spacerItem1)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.label_2 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_2 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout_2.addWidget(self.label_2)
-        self.count_region_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.count_region_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.count_region_lineEdit.setStyleSheet("")
         self.count_region_lineEdit.setObjectName("count_region_lineEdit")
         self.horizontalLayout_2.addWidget(self.count_region_lineEdit)
@@ -79,7 +81,7 @@ class Ui_MainWindow2(object):
         self.gridLayout_2.addItem(spacerItem2, 7, 0, 1, 1)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.cance_pushButton = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.cance_pushButton = QtWidgets.QPushButton(parent = self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed,
                                            QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -88,7 +90,7 @@ class Ui_MainWindow2(object):
         self.cance_pushButton.setSizePolicy(sizePolicy)
         self.cance_pushButton.setObjectName("cance_pushButton")
 
-        self.get_path_dir_pushButton = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.get_path_dir_pushButton = QtWidgets.QPushButton(parent = self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed,
                                            QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -105,7 +107,7 @@ class Ui_MainWindow2(object):
         self.horizontalLayout_3.addWidget(self.cance_pushButton)
 
         self.horizontalLayout_3.addItem(spacerItem3)
-        self.next_pushButton = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.next_pushButton = QtWidgets.QPushButton(parent = self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed,
                                            QtWidgets.QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -120,15 +122,15 @@ class Ui_MainWindow2(object):
         self.gridLayout_2.addItem(spacerItem4, 1, 0, 1, 1)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.tp_checkBox = QtWidgets.QCheckBox(parent=self.centralwidget)
+        self.tp_checkBox = QtWidgets.QCheckBox(parent = self.centralwidget)
         self.tp_checkBox.setAutoFillBackground(False)
         self.tp_checkBox.setTristate(False)
         self.tp_checkBox.setObjectName("tp_checkBox")
         self.horizontalLayout.addWidget(self.tp_checkBox)
-        self.dad_checkBox = QtWidgets.QCheckBox(parent=self.centralwidget)
+        self.dad_checkBox = QtWidgets.QCheckBox(parent = self.centralwidget)
         self.dad_checkBox.setObjectName("dad_checkBox")
         self.horizontalLayout.addWidget(self.dad_checkBox)
-        self.podd_checkBox = QtWidgets.QCheckBox(parent=self.centralwidget)
+        self.podd_checkBox = QtWidgets.QCheckBox(parent = self.centralwidget)
         self.podd_checkBox.setEnabled(False)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed,
                                            QtWidgets.QSizePolicy.Policy.Fixed)
@@ -143,65 +145,65 @@ class Ui_MainWindow2(object):
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
-        self.contractor_boss_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.contractor_boss_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.contractor_boss_lineEdit.setObjectName("contractor_boss_lineEdit")
         self.horizontalLayout_7.addWidget(self.contractor_boss_lineEdit)
-        self.label_10 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_10 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_10.setObjectName("label_10")
         self.horizontalLayout_7.addWidget(self.label_10)
-        self.position_boss_contractorlineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.position_boss_contractorlineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.position_boss_contractorlineEdit.setObjectName("position_boss_contractorlineEdit")
         self.horizontalLayout_7.addWidget(self.position_boss_contractorlineEdit)
         self.gridLayout.addLayout(self.horizontalLayout_7, 3, 3, 1, 1)
-        self.label_8 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_8 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_8.setObjectName("label_8")
         self.gridLayout.addWidget(self.label_8, 3, 0, 1, 1)
-        self.label_3 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_3 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-        self.client_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.client_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.client_lineEdit.setStyleSheet("")
         self.client_lineEdit.setObjectName("client_lineEdit")
         self.horizontalLayout_5.addWidget(self.client_lineEdit)
         self.gridLayout.addLayout(self.horizontalLayout_5, 0, 3, 1, 1)
-        self.label_6 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_6 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_6.setObjectName("label_6")
         self.gridLayout.addWidget(self.label_6, 4, 0, 1, 1)
         self.horizontalLayout_10 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_10.setObjectName("horizontalLayout_10")
-        self.contractor_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.contractor_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.contractor_lineEdit.setStyleSheet("")
         self.contractor_lineEdit.setObjectName("contractor_lineEdit")
         self.horizontalLayout_10.addWidget(self.contractor_lineEdit)
         self.gridLayout.addLayout(self.horizontalLayout_10, 2, 3, 1, 1)
-        self.label_5 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_5 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_5.setObjectName("label_5")
         self.gridLayout.addWidget(self.label_5, 2, 0, 1, 1)
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-        self.client_boss_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.client_boss_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.client_boss_lineEdit.setObjectName("client_boss_lineEdit")
         self.horizontalLayout_6.addWidget(self.client_boss_lineEdit)
-        self.label_9 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_9 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_9.setObjectName("label_9")
         self.horizontalLayout_6.addWidget(self.label_9)
-        self.position_boss_clients_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.position_boss_clients_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.position_boss_clients_lineEdit.setObjectName("position_boss_clients_lineEdit")
         self.horizontalLayout_6.addWidget(self.position_boss_clients_lineEdit)
         self.gridLayout.addLayout(self.horizontalLayout_6, 1, 3, 1, 1)
-        self.label_7 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_7 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_7.setObjectName("label_7")
         self.gridLayout.addWidget(self.label_7, 1, 0, 1, 1)
-        self.label_4 = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label_4 = QtWidgets.QLabel(parent = self.centralwidget)
         self.label_4.setObjectName("label_4")
         self.gridLayout.addWidget(self.label_4, 5, 0, 1, 1)
-        self.year_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.year_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.year_lineEdit.setStyleSheet("")
         self.year_lineEdit.setObjectName("year_lineEdit")
         self.gridLayout.addWidget(self.year_lineEdit, 5, 3, 1, 1)
-        self.cypher_lineEdit = QtWidgets.QLineEdit(parent=self.centralwidget)
+        self.cypher_lineEdit = QtWidgets.QLineEdit(parent = self.centralwidget)
         self.cypher_lineEdit.setStyleSheet("")
         self.cypher_lineEdit.setObjectName("cypher_lineEdit")
         self.gridLayout.addWidget(self.cypher_lineEdit, 4, 3, 1, 1)
@@ -231,7 +233,7 @@ class Ui_MainWindow2(object):
         MainWindow2.setTabOrder(self.year_lineEdit, self.cance_pushButton)
         MainWindow2.setTabOrder(self.cance_pushButton, self.next_pushButton)
 
-    def retranslateUi(self, MainWindow2):
+    def retranslateUi (self, MainWindow2):
         _translate = QtCore.QCoreApplication.translate
         MainWindow2.setWindowTitle(_translate("MainWindow2", "\"Название дороги\""))
         self.label.setText(_translate("MainWindow2", "Тип документа"))
@@ -255,11 +257,12 @@ class Ui_MainWindow2(object):
 
 
 class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
-    def __init__(self, road_name=None, database_name=None, parent=None):
+    def __init__ (self, road_name = None, database_name = None, parent = None):
         # Это здесь нужно для доступа к переменным, методам
         # и т.д. в файле design.py
 
         super(Window2, self).__init__(parent)
+        self.threadpool = QThreadPool()
         self.data = None
         self.title = road_name
         self.parent = parent
@@ -283,9 +286,10 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.set_plain_text_edit(self.read_json_file_info())  # заполнить поля в текущем окне из json файла
         self.setWindowTitle(str(self.title))
         self.get_path_dir_pushButton.clicked.connect(self.set_path_dir)
-        #self.next_pushButton.clicked.connect(self.window3_show)
 
-    def set_plain_text_edit(self, data: dict):
+        # self.next_pushButton.clicked.connect(self.window3_show)
+
+    def set_plain_text_edit (self, data: dict):
 
         """
         Устанавливает значение client, fio_client, position_client из словаря
@@ -299,14 +303,10 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.client_boss_lineEdit.setText(data.get('fio_client', None))
         self.position_boss_clients_lineEdit.setText(data.get('position_client', None))
 
-
-
-    def set_path_dir(self):
+    def set_path_dir (self):
         self.path_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Выберите директорию')
 
-
-
-    def tp_checkbox_true(self):
+    def tp_checkbox_true (self):
         """
             07.08.2023
         Здесь бэк-энд и подключение SQL-запросов для формирования отчета по техническому паспорту автомобильной дороги
@@ -316,7 +316,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.request.get_tp_datas(self.title)
         print("успешно")
 
-    def dad_checkbox_true(self):
+    def dad_checkbox_true (self):
         """
         Здесь бэк-энд и подключение SQL-запросов для формирования отчета по диагностике автомобильной дороги
         :return:
@@ -325,7 +325,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.request = db.Query(self.database_name)
         self.request.get_dad_datas(self.title)
 
-    def back_to_win(self):
+    def back_to_win (self):
         """
         Переход в предыдущее окно
         :return:
@@ -333,7 +333,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.parent.show()
         self.close()
 
-    def get_info_window2(self):
+    def get_info_window2 (self):
         """
         Получить данные из окна 2
         """
@@ -341,13 +341,13 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         path_dir = self.path_dir
         if path_dir == '':
             path_dir = settings.ROOT_PATH
-        client = self.client_lineEdit.text()
-        fio_client = self.client_boss_lineEdit.text()
-        position_client = self.position_boss_clients_lineEdit.text()
+        client = self.client_lineEdit.text() if self.client_lineEdit.text() else 'Заказчик'
+        fio_client = self.client_boss_lineEdit.text() if self.client_boss_lineEdit.text() else 'Ф.И.О. Заказчика'
+        position_client = self.position_boss_clients_lineEdit.text() if self.position_boss_clients_lineEdit.text() else 'Должность Заказчика'
 
-        contractor = self.contractor_lineEdit.text()
-        fio_contractor = self.contractor_boss_lineEdit.text()
-        position_contractor = self.position_boss_contractorlineEdit.text()
+        contractor = self.contractor_lineEdit.text() if self.contractor_lineEdit.text() else 'Подрядчик'
+        fio_contractor = self.contractor_boss_lineEdit.text() if self.contractor_boss_lineEdit.text() else 'Ф.И.О. Подрядчика'
+        position_contractor = self.position_boss_contractorlineEdit.text() if self.position_boss_contractorlineEdit.text() else 'Должность Подрядчика'
 
         year = self.year_lineEdit.text()
         cypher = self.cypher_lineEdit.text()
@@ -366,7 +366,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                 'cypher': cypher,
                 'tip_passport': tip_passport}
 
-    def check_tip_document(self):
+    def check_tip_document (self):
         '''
         Проверка выбранного типа документ
         :return:
@@ -381,7 +381,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
 
             msg.exec()
 
-        elif self.tp_checkBox.isChecked():      # иначе если выбран тип документа: технический паспорт
+        elif self.tp_checkBox.isChecked():  # иначе если выбран тип документа: технический паспорт
             if not self.road_city_radioButton.isChecked() and not self.roads_automobile_radioButton.isChecked():
                 msg = QMessageBox(self)
                 # setting message for Message Box
@@ -391,11 +391,21 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                 msg.exec()
             else:
                 try:
+                    self.request = db.Query(self.database_name)
                     if self.road_city_radioButton.isChecked():
-                       # self.request = db.Query(self.database_name)
-                       # self.data = self.request.get_tp_datas(self.title) # записываем результат в переменную
-                        #print(self.data)
-                        print("Сбор данных по городской дороге успешно выполнен!")
+                        # запуск чтения из базы в отдельном потоке
+                        worker = Worker(self.request.get_tp_datas,
+                                        self.title)  # Any other args, kwargs are passed to the run function
+                        worker.signals.started.connect(self.start)
+                        worker.signals.result.connect(self.transfer_data_Windows3)
+                        worker.signals.finish.connect(self.finished)
+
+                        self.threadpool.start(worker)
+
+                        # print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+                        # self.data = self.request.get_tp_datas(self.title)  # записываем результат в переменную
+
+                        # print("Сбор данных по городской дороге успешно выполнен!")
                     # elif self.roads_automobile_radioButton.isChecked():
                     #     self.request = db.Query(self.database_name)
                     #     self.result_data = self.request.get_tp_datas(self.title)
@@ -411,7 +421,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
                     raise f'Не удалось подключиться к базе данных. Ошибка {e}'
 
                 # print(self.db.get_tp_datas(self.title))
-        elif self.dad_checkBox.isChecked():     # иначе если выбран тип документа: диагностика
+        elif self.dad_checkBox.isChecked():  # иначе если выбран тип документа: диагностика
             self.request = db.Query(self.database_name)
             self.request.get_dad_datas(self.title)
             print('заполняю диагностику')
@@ -421,14 +431,27 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         elif self.podd_checkBox.isChecked():
             pass
 
-    def window3_show(self):
+    def window3_show (self):
         """ Переход в окно 3"""
-        self.window3 = Window3(title=self.title, parent=self, data = self.data,  path = self.path_dir)
+        self.window3 = Window3(title = self.title, parent = self, data = self.data, path = self.path_dir)
         self.window3.show()
         self.hide()
 
+    def msg_error (self, error: tuple):
+        print(error)
 
-def main():
+    def transfer_data_Windows3 (self, result):
+        self.window3.data = result
+
+    def start (self):
+        print('я начал собирать данные')
+
+    def finished (self):
+        self.window3.done_pushButton.setEnabled(True)
+        print('я закончил собирать данные')
+
+
+def main ():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = Window2()  # Создаём объект класса
     window.show()  # Показываем окно
