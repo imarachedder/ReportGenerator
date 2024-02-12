@@ -169,6 +169,7 @@ class Ui_MainWindow3(object):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.done_pushButton.sizePolicy().hasHeightForWidth())
+        self.done_pushButton.setEnabled(False)
         self.done_pushButton.setSizePolicy(sizePolicy)
         self.done_pushButton.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
         self.done_pushButton.setObjectName("done_pushButton")
@@ -238,7 +239,7 @@ class Window3(QtWidgets.QMainWindow, Ui_MainWindow3, JsonWorker):
         self.back_pushButton.clicked.connect(self.back_to_window)
         #
         #self.done_pushButton.clicked.connect(self.preview_window)
-        self.done_pushButton.clicked.connect(lambda: self.write_excel(data=data, data_interface = self.get_info_from_plain_text_edit()))
+        self.done_pushButton.clicked.connect(lambda: self.write_excel(data=self.data, data_interface = self.get_info_from_plain_text_edit()))
         self.set_plain_text_edit(self.read_json_file_info())
 
     def write_excel (self, data=None, data_interface = None):
