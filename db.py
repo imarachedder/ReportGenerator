@@ -344,11 +344,11 @@
 #     main()
 
 # -*- coding: utf-8 -*-
-import pymssql
-import pandas as pd
 import pyodbc
-import sys
+from icecream import icecream
+
 import settings
+
 
 # стоянки, парковки смотеть в проезжей части, счтиается количество
 # Опоры освещения и контактные сети, считается длина
@@ -361,7 +361,7 @@ import settings
 
 
 class Query:
-    def __init__(self, database=None):
+    def __init__ (self, database = None):
         __SERVER = settings.server
         __USER = settings.user
         __PASSWORD = settings.password
@@ -374,27 +374,26 @@ class Query:
         self.db.setencoding('cp1251')
         self.cursor = self.db.cursor()  # возвращает значение стобец-строка в формате словаря ключ-значение
 
-    def get_databases(self):
+    def get_databases (self):
         request = "select name from sys.databases"
         self.cursor.execute(request)
-        self.db_list = [i[0] for i in self.cursor.fetchall()[4:]]
-        return self.db_list
+        db_list = [i[0] for i in self.cursor.fetchall()[4:]]
+        return db_list
 
-    def set_road_name(self):
+    def set_road_name (self):
         """
             Вытаскивает из базы столбцы с названиями а/д
         :return: self.road_names -> dict
         """
         self.cursor.execute("SELECT ID_Road, Name FROM Road")
-        self.road_names = {'№': [], 'ID_Road': [], 'Название': []}
-        for row in self.cursor.fetchall():
-            # self.road_names['№'].append(row[0])
-            self.road_names['ID_Road'].append(row[0])
-            self.road_names['Название'].append(row[1])
-            # print(row[1])
-        print(self.road_names['Название'])
-        return self.road_names['Название']
-
+        # self.road_names = {'№': [], 'ID_Road': [], 'Название': []}
+        # for row in self.cursor.fetchall():
+        #     # self.road_names['№'].append(row[0])
+        #     self.road_names['ID_Road'].append(row[0])
+        #     self.road_names['Название'].append(row[1])
+        #     # print(row[1])
+        # print(self.road_names['Название'])
+        return [row[1] for row in self.cursor.fetchall()]
 
     def get_tp_datas (self, road_name):
         """
@@ -423,12 +422,11 @@ class Query:
                     inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
                     where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
         self.cursor.execute(request_km, road_name)
-        for param in self.cursor.fetchall():
+        for i, param in enumerate(self.cursor.fetchall()):
             # последовательность объектов:[(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
             # максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры), (конец_километры, конец_метры)), ....]
-            # print(param)
-            if param[1] in res_km:
 
+            if param[1] in res_km:
                 if param[2] in res_km.get(param[1]):
                     if param[3] in res_km.get(param[1]).get(param[2]):
                         res_km.get(param[1]).get(param[2]).get(param[3]).append(param[4::])
@@ -440,7 +438,7 @@ class Query:
                 res_km.update({param[1]: {param[2]: {param[3]: [param[4::]]}}})
 
         self.sort_dict_binding(res_km)
-
+        icecream.ic(res_km)
         res = {'название дороги': f'{road_name}', }
 
         request = """
@@ -461,7 +459,7 @@ class Query:
 
         self.cursor.execute(request, road_name)  # item
 
-        for param in self.cursor.fetchall():
+        for i, param in enumerate(self.cursor.fetchall()):
 
             tuple_km = tuple(
                 res_km.get(param[1], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
@@ -471,8 +469,6 @@ class Query:
             else:
                 km = ((0, param[-2]), (0, param[-1]))
             coordinates = (*param[4::], *km)
-
-            # print(param, coordinates)
 
             if param[1] in res:
 
@@ -489,10 +485,10 @@ class Query:
 
         # сортирует в словаре координаты по возрастанию
         self.sort_dict_binding(res)
-        res = dict(sorted(res.items()))
-        return res
+        #print(res)
+        return dict(sorted(res.items()))
 
-    def get_dad_datas(self, name):
+    def get_dad_datas (self, name):
         """ 29.06.2023 """
         """
         Вытаскиваем данные из бд и формируем словарь по атрибутам
@@ -547,7 +543,6 @@ class Query:
             print(key, value)
         return dad_datas_dict
 
-
     def convert_m_to_km (self, param, list_km):
         '''
         переводит метры в километры с привязкой к километровым знакам
@@ -576,7 +571,7 @@ class Query:
                     return (int(num_sign[0]), param[-2] - num_sign[-2]), (int(num_sign[0]), param[-1] - num_sign[-1])
                 elif param[-2] >= list_km[-1][-2]:
                     return (int(list_km[-1][0]), param[-2] - list_km[-1][-2]), (
-                    int(list_km[-1][0]), param[-1] - list_km[-1][-1])
+                        int(list_km[-1][0]), param[-1] - list_km[-1][-1])
                 # elif tmp[-2] <= param[-2] < num_sign[-2]:
                 #     return (tmp[0], param[-2] - tmp[-2]), (tmp[0], param[-1] - tmp[-1])
                 elif param[-2] < num_sign[-2]:
@@ -635,26 +630,25 @@ class Query:
                     continue
             return (int(start_km), start_m), (int(end_km), end_m)
 
-
     def sort_dict_binding (self, res):
         '''
         сортирует словарь с объектами по первой метровой привязке
         :param res:
-        :return: res
+        :return:
         '''
 
-        for _, value in res.items():
-            if type(value) == dict:
-                for i, val in value.items():
-                    if type(val) == dict:
+        for value in res.values():
+            if isinstance(value, dict):
+                for val in value.values():
+                    if isinstance(value, dict):
                         for elem in val.values():
                             elem.sort(key = lambda x: (x[-2], x[-1]))
 
-    def close_db(self):
+    def close_db (self):
         self.db.close()
 
 
-def databases():
+def databases ():
     request = "select name from sys.databases"
     db = pyodbc.connect(f'Driver={settings.driver}; Server=SIBREGION-SRV2; Trusted_Connection=yes;')
 
@@ -664,20 +658,19 @@ def databases():
     db.close()
     return db_list
 
+
 def main ():
     import time
     db = Query('ZAP2023')  # FKU_VOLGO_VYATSK_1
     list_roads = db.set_road_name()
-    #print(list_roads)
+    # print(list_roads)
     # data = db.get_dad_datas('P-254')  # Р-176 "Вятка" Чебоксары - Йошкар-Ола - Киров - Сыктывкар
-
 
     start = time.time()  # точка отсчета времени
     data_test = db.get_tp_datas(list_roads[1])
     end = time.time() - start  # собственно время работы программы
     print(f"{round(end, 1)} секунд")  # вывод времени
     print(data_test)
-
 
     # test(data)
     # print(data)
