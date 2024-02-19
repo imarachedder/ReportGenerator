@@ -1,5 +1,5 @@
 import math
-import os
+from pathlib import Path
 
 import win32com.client
 from PyQt6.QtWidgets import QMessageBox
@@ -9,7 +9,7 @@ from openpyxl.drawing.image import Image
 from openpyxl.styles import Alignment, Side, Border, Font
 
 import db
-from settings import path_template_excel, path_template_excel_application
+from settings import path_template_excel, path_template_excel_application,path_template_excel_dad
 
 
 class WriterExcel:
@@ -22,7 +22,7 @@ class WriterExcel:
             self.data = {}
         self.wb = load_workbook(filename = path_template_excel, keep_vba = True, keep_links = True)
         self.path_dir = path
-        self.errors = open(os.path.join(self.path_dir, 'Ошибки.txt'), "a", encoding = "utf-8")
+        self.errors = open( Path.joinpath(self.path_dir, 'Ошибки.txt'), "a", encoding = "utf-8")
         self.data_interface = data_interface
         if data_interface is None:
             self.data_interface = {'tip_passport': 'city'}
@@ -1694,15 +1694,32 @@ class WriterExcelTP(WriterExcel):
 
 
 class WriterExcelDAD(WriterExcel):
-    def __init__ (self, data: dict = None):
-        super().__init__(data)
+    def __init__ (self, data: dict = None,):
+        super().__init__(data,path_template_excel = path_template_excel_dad)
         self.tip_doc = 'Диагностика'
 
     def write_titular (self):
-        pass
-
+        ws = self.wb['Титульный']
+        ws['A2'] = self.data_interface.get('client', 'Заказчик')
+        ws['B15'] = self.data_interface.get('client', 'Заказчик')
+        ws['A19'] = f"составлена на {self.data_interface.get('year', '2024')} г."
+        ws['A21'] = "Шифр: " + self.data_interface.get('cypher', 'шифр')
+        ws['A28'] = self.data_interface.get('contractor', 'Подрядчик')
+        ws['A31'] = self.data_interface.get("position_contractor", "Должность подрядчика") + ' ' + self.data_interface.get("fio_contractor", "ФИО подрядчика")
+        ws['F28'] = self.data_interface.get('client', 'Заказчик')
+        ws['F31'] = self.data_interface.get("position_client", "Должность заказчика") + ' ' + self.data_interface.get("fio_client", "ФИО заказчика")
+        ws['A40'] = f"г. Омск {self.data_interface.get('year', '2024')} г."
     def write_scheme (self):
-        pass
+        ws = self.wb['Схема']  # выбираем лист
+
+        try:
+            schema = Image(f"{self.path_dir}\Схема.png")
+            # schema.width = 1380
+            # schema.height = 800
+            ws.add_image(schema, 'A2')
+
+        except FileNotFoundError:
+            self.errors.write(f'{self.tip_doc} Cхема: Файл Схема.png отсутствует в {self.path_dir}\n')
 
     # def write_diagrams1 (self):
     #     """
@@ -1787,6 +1804,15 @@ class WriterExcelDAD(WriterExcel):
     #     chart4.title = 'Диаграмма с процентным накоплением'
     #     ws.add_chart(chart4, "A55")
 
+    def write_note (self):
+        '''
+        заполенение листа записка
+        '''
+        ws = self.wb['Записка']
+        ws['A3'] = (f'Силами ООО «Сибирь-Регион» были выполнены работы по диагностике (обследованию технического '
+                    f'состояния) автомобильной дороги "{self.data["название дороги"]}", с использованием оборудования:')
+        ws['C12'] = ''#какую дату писать
+        ws['A14'] = f"Начало дороги: км "
 
 class WriterApplication(WriterExcel):
     def __init__ (self, data: dict = None, path = None, data_interface = None, parent = None):
