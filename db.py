@@ -360,200 +360,32 @@ import settings
 # Дорожные знаки, количество
 
 
-class Query:
-    def __init__ (self, database = None):
-        __SERVER = settings.server
-        __USER = settings.user
-        __PASSWORD = settings.password
-        __DATABASE = str(database)
-        print(__DATABASE)
-        self.db = pyodbc.connect('Driver={SQL Server};'
-                                 'Server=' + __SERVER + ';'
-                                                        'Database=' + __DATABASE + ';'
-                                                                                   'Trusted_Connection=yes;')
-        self.db.setencoding('cp1251')
-        self.cursor = self.db.cursor()  # возвращает значение стобец-строка в формате словаря ключ-значение
+def sort_dict_binding (res):
+    '''
+     сортирует словарь с объектами по первой метровой привязке
+    :param res:
+    :return:
+    '''
 
-    def get_databases (self):
-        request = "select name from sys.databases"
-        self.cursor.execute(request)
-        db_list = [i[0] for i in self.cursor.fetchall()[4:]]
-        return db_list
+    for value in res.values():
+        if not isinstance(value, dict):
+            continue
+        for val in value.values():
+            #if isinstance(value, dict):
+            for elem in val.values():
+                 elem.sort(key = lambda x: (x[-2], x[-1]))
 
-    def set_road_name (self):
-        """
-            Вытаскивает из базы столбцы с названиями а/д
-        :return: self.road_names -> dict
-        """
-        self.cursor.execute("SELECT ID_Road, Name FROM Road")
-        # self.road_names = {'№': [], 'ID_Road': [], 'Название': []}
-        # for row in self.cursor.fetchall():
-        #     # self.road_names['№'].append(row[0])
-        #     self.road_names['ID_Road'].append(row[0])
-        #     self.road_names['Название'].append(row[1])
-        #     # print(row[1])
-        # print(self.road_names['Название'])
-        return [row[1] for row in self.cursor.fetchall()]
-
-    def get_tp_datas (self, road_name):
-        """
-         Последовательность объектов:
-        {название дороги: название дороги,
-        участок_дороги:{
-            объект:{
-            свойство объекта: [(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
-            максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры),
-            (конец_километры, конец_метры)), ....], ...}, ...}, ...}
-        :return:
-        """
-
-        res_km = {}
-        # Road.ID_Road,
-        request_km = """ select  Road.Name,  High.Description, Group_Description.Item_Name, 
-                     Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(ATTRIBUTE.Image_Points) as Length, 
-                     dbo.CalcSquare(ATTRIBUTE.Image_Points) as Square, Params.ID_Param, dbo.GetCountPoint(Image_Points),
-                     dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax,
-                    Attribute.L1, Attribute.L2
-                    from Road inner join Way on Road.ID_Road = Way.ID_Road
-                    inner join High on Way.ID_Way = High.ID_Way
-                    inner join Attribute on High.ID_High = Attribute.ID_High
-                    inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
-                    inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
-                    inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
-                    where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
-        self.cursor.execute(request_km, road_name)
-        for i, param in enumerate(self.cursor.fetchall()):
-            # последовательность объектов:[(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
-            # максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры), (конец_километры, конец_метры)), ....]
-
-            if param[1] in res_km:
-                if param[2] in res_km.get(param[1]):
-                    if param[3] in res_km.get(param[1]).get(param[2]):
-                        res_km.get(param[1]).get(param[2]).get(param[3]).append(param[4::])
-                    else:
-                        res_km.get(param[1]).get(param[2]).update({param[3]: [param[4::]]})
-                else:
-                    res_km.get(param[1]).update({param[2]: {param[3]: [param[4::]]}})
-            else:
-                res_km.update({param[1]: {param[2]: {param[3]: [param[4::]]}}})
-
-        self.sort_dict_binding(res_km)
-        icecream.ic(res_km)
-        res = {'название дороги': f'{road_name}', }
-
-        request = """
-                    select  Road.Name,  High.Description, Group_Description.Item_Name, 
-                    Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(ATTRIBUTE.Image_Points) as Length, 
-                    dbo.CalcSquare(ATTRIBUTE.Image_Points) as Square, Params.ID_Param, dbo.GetCountPoint(Image_Points),
-                    dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax,
-                    Attribute.L1, Attribute.L2
-                    from Road inner join Way on Road.ID_Road = Way.ID_Road
-                    inner join High on Way.ID_Way = High.ID_Way
-                    inner join Attribute on High.ID_High = Attribute.ID_High
-                    inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
-                    inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
-                    inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
-                    where Road.Name = ? 
-
-                """  # and Group_Description.Item_Name = ?
-
-        self.cursor.execute(request, road_name)  # item
-
-        for i, param in enumerate(self.cursor.fetchall()):
-
-            tuple_km = tuple(
-                res_km.get(param[1], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
-
-            if tuple_km:
-                km = self.convert_m_to_km(param, tuple_km)
-            else:
-                km = ((0, param[-2]), (0, param[-1]))
-            coordinates = (*param[4::], *km)
-
-            if param[1] in res:
-
-                if param[2] in res.get(param[1]):
-                    if param[3] in res.get(param[1]).get(param[2]):
-
-                        res.get(param[1]).get(param[2]).get(param[3]).append(coordinates)
-                    else:
-                        res.get(param[1]).get(param[2]).update({param[3]: [coordinates]})
-                else:
-                    res.get(param[1]).update({param[2]: {param[3]: [coordinates]}})
-            else:
-                res.update({param[1]: {param[2]: {param[3]: [coordinates]}}})
-
-        # сортирует в словаре координаты по возрастанию
-        self.sort_dict_binding(res)
-        #print(res)
-        return dict(sorted(res.items()))
-
-    def get_dad_datas (self, name):
-        """ 29.06.2023 """
-        """
-        Вытаскиваем данные из бд и формируем словарь по атрибутам
-        :param attr_list: хранит в себе названия атрибутов
-        :param name: название автомобильной дороги 
-        :return: возвращаем словарь с данными по диагностике
-        """
-        dad_datas_dict = {}
-
-        attr_list = [
-            'Оценка ровности IRI', 'Глубина колеи', 'Граница участка дороги', 'Ось дороги', 'Кривая',
-            'Ширина проезжей части'
-        ]
-
-        request = """
-            select Road.ID_Road, Road.Name, Way.ID_Way, Way.Description, High.ID_High, High.Description,
-            Attribute.ID_Attribute, Attribute.L1, Attribute.L2, Params.ID_Param, 
-            Params.ValueParam, Group_Description.ID_Type_Attr, Group_Description.Item_Name
-            from Road inner join Way on Road.ID_Road = Way.ID_Road
-            inner join High on Way.ID_Way = High.ID_Way
-            inner join Attribute on High.ID_High = Attribute.ID_High 
-            inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
-            inner join Group_Description on Attribute.ID_Type_Attr = Group_Description.ID_Type_Attr
-            where Road.Name = ? and Group_Description.Item_Name = ?
-        """
-
-        for num, attr in enumerate(attr_list):
-            self.cursor.execute(request, (name, attr))
-            datas_dict = {
-                'Name': [], 'Description_uch1': [], 'L1-Начало': [], 'L2-Конец': [],
-                'ID_Param': [], 'ValueParam': [], 'ID_Type_Attr': [], 'Item_Name': []
-            }
-            for row in self.cursor.fetchall():
-                """ заполяяем список данными из базы """
-
-                # datas_dict['ID_Road'] = row[0]
-                datas_dict['Name'] = row[1]
-                # datas_dict['ID_Way'].append(row[2])
-                # datas_dict['Description'].append(row[3])  # направление движения по записи
-                # datas_dict['ID_High'].append(row[4])
-                datas_dict['Description_uch1'].append(row[5])
-                # datas_dict['ID_Attribute'].append(row[6])
-                datas_dict['L1-Начало'].append(row[7])
-                datas_dict['L2-Конец'].append(row[8])
-                datas_dict['ID_Param'].append(row[9])
-                datas_dict['ValueParam'].append(row[10])
-                datas_dict['ID_Type_Attr'].append(row[11])
-                datas_dict['Item_Name'].append(row[12])
-            dad_datas_dict[attr] = datas_dict
-
-        for key, value in dad_datas_dict.items():
-            print(key, value)
-        return dad_datas_dict
-
-    def convert_m_to_km (self, param, list_km):
+def convert_m_to_km ( param, list_km):
         '''
         переводит метры в километры с привязкой к километровым знакам
-        :param param: объект из базы данных
+        :param param: строка из базы данных
         :param list_km: список километровых знаков
-        :param distance_km: список дистанций между километровыми знаками
         :return: привязки начала и конца объекта
         '''
         # частный случай километровые знаки
         if param[2] == 'Километровые знаки':
-            return (int(param[-7]), 0), (int(param[-7]), 0)
+            #('2', 0.0, 0.0, 1, 1, 4.238, 4.238, 2000, 2000, (0, 0), (0, 0))
+            return (int(param[4]), 0), (int(param[4]), 0)
         # если точечный объект
         if param[-2] == param[-1]:
             # print('start==end')
@@ -592,13 +424,13 @@ class Query:
             for idx_km, num_sign in enumerate(list_km):
                 if num_sign == list_km[-1]:
                     next_km = list_km[-1]
-                    idx = idx_km
+                    #idx = idx_km
                 elif num_sign == list_km[0]:
                     next_km = list_km[1]
-                    idx = idx_km
+                    #idx = idx_km
                 else:
                     next_km = list_km[idx_km % len(list_km) + 1]
-                    idx = idx_km
+                idx = idx_km
                 if num_sign[-2] <= param[-2] < next_km[-2] or param[-2] < num_sign[-2]:
                     start_km = num_sign[0]
                     start_m = param[-2] - num_sign[-2]
@@ -610,7 +442,7 @@ class Query:
                 else:
                     continue
             # ищем end начиная с idx благодаря этому отсекаются уже пройденные километровые
-            for idx_km, num_sign in enumerate(list_km[idx:]):
+            for num_sign in list_km[idx:]:
                 if num_sign == list_km[-1]:
                     next_km = list_km[-1]
                 elif num_sign == list_km[0]:
@@ -630,19 +462,246 @@ class Query:
                     continue
             return (int(start_km), start_m), (int(end_km), end_m)
 
-    def sort_dict_binding (self, res):
-        '''
-        сортирует словарь с объектами по первой метровой привязке
-        :param res:
-        :return:
-        '''
+class Query:
+    def __init__ (self, database = None):
+        __SERVER = settings.server
+        __USER = settings.user
+        __PASSWORD = settings.password
+        __DATABASE = str(database)
+        print(__DATABASE)
+        self.db = pyodbc.connect('Driver={SQL Server};'
+                                 'Server=' + __SERVER + ';'
+                                                        'Database=' + __DATABASE + ';'
+                                                                                   'Trusted_Connection=yes;')
+        self.db.setencoding('cp1251')
+        self.cursor = self.db.cursor()  # возвращает значение стобец-строка в формате словаря ключ-значение
 
-        for value in res.values():
-            if isinstance(value, dict):
-                for val in value.values():
-                    if isinstance(value, dict):
-                        for elem in val.values():
-                            elem.sort(key = lambda x: (x[-2], x[-1]))
+    def get_databases (self):
+        request = "select name from sys.databases"
+        self.cursor.execute(request)
+        db_list = [i[0] for i in self.cursor.fetchall()[4:]]
+        return db_list
+
+    def set_road_name (self):
+        """
+            Вытаскивает из базы столбцы с названиями а/д
+        :return: self.road_names -> dict
+        """
+        self.cursor.execute("SELECT ID_Road, Name FROM Road")
+        return [row[1] for row in self.cursor.fetchall()]
+
+    def get_km_sign_list (self, road_name):
+        res_km = {}
+        request_km = """select High.Description, Group_Description.Item_Name, 
+                             Types_Description.Param_Name, Params.ValueParam, Attribute.L1, Attribute.L2
+                            from Road inner join Way on Road.ID_Road = Way.ID_Road
+                            inner join High on Way.ID_Way = High.ID_Way
+                            inner join Attribute on High.ID_High = Attribute.ID_High
+                            inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                            inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                            inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                            where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
+        self.cursor.execute(request_km, road_name)
+
+        for i, param in enumerate(self.cursor.fetchall()):
+            # последовательность объектов:[(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
+            # максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры), (конец_километры, конец_метры)), ....]
+
+            if param[0] in res_km:
+                if param[1] in res_km.get(param[0]):
+                    if param[2] in res_km.get(param[0]).get(param[1]):
+                        res_km.get(param[0]).get(param[1]).get(param[2]).append(param[3::])
+                    else:
+                        res_km.get(param[0]).get(param[1]).update({param[2]: [param[3::]]})
+                else:
+                    res_km.get(param[0]).update({param[1]: {param[2]: [param[3::]]}})
+            else:
+                res_km.update({param[0]: {param[1]: {param[2]: [param[3::]]}}})
+
+        sort_dict_binding(res_km)
+        return res_km
+    def get_tp_datas (self, road_name):
+        """
+         Последовательность объектов:
+        {название дороги: название дороги,
+        участок_дороги:{
+            объект:{
+            свойство объекта: [(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
+            максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры),
+            (конец_километры, конец_метры)), ....], ...}, ...}, ...}
+        :return:
+        """
+
+        res_km = self.get_km_sign_list(road_name)
+        # Road.ID_Road,
+        # request_km = """select   Road.Name,  High.Description, Group_Description.Item_Name,
+        #              Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(ATTRIBUTE.Image_Points) as Length,
+        #              dbo.CalcSquare(ATTRIBUTE.Image_Points) as Square, Params.ID_Param, dbo.GetCountPoint(Image_Points),
+        #              dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax,
+        #             Attribute.L1, Attribute.L2
+        #             from Road inner join Way on Road.ID_Road = Way.ID_Road
+        #             inner join High on Way.ID_Way = High.ID_Way
+        #             inner join Attribute on High.ID_High = Attribute.ID_High
+        #             inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+        #             inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+        #             inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+        #             where Road.Name = ? and Group_Description.Item_Name = 'Километровые знаки' """
+        # self.cursor.execute(request_km, road_name)
+        #
+        # for i, param in enumerate(self.cursor.fetchall()):
+        #     # последовательность объектов:[(значение, длина, площадь, id параметра, количество точек, минимальное отклонение,
+        #     # максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры), (конец_километры, конец_метры)), ....]
+        #
+        #     if param[1] in res_km:
+        #         if param[2] in res_km.get(param[1]):
+        #             if param[3] in res_km.get(param[1]).get(param[2]):
+        #                 res_km.get(param[1]).get(param[2]).get(param[3]).append(param[4::])
+        #             else:
+        #                 res_km.get(param[1]).get(param[2]).update({param[3]: [param[4::]]})
+        #         else:
+        #             res_km.get(param[1]).update({param[2]: {param[3]: [param[4::]]}})
+        #     else:
+        #         res_km.update({param[1]: {param[2]: {param[3]: [param[4::]]}}})
+        #
+        # sort_dict_binding(res_km)
+
+        res = {'название дороги': f'{road_name}', }
+
+        request = """
+                    select  Road.Name,  High.Description, Group_Description.Item_Name, 
+                    Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(ATTRIBUTE.Image_Points) as Length, 
+                    dbo.CalcSquare(ATTRIBUTE.Image_Points) as Square, Params.ID_Param, dbo.GetCountPoint(Image_Points),
+                    dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax,
+                    Attribute.L1, Attribute.L2
+                    from Road inner join Way on Road.ID_Road = Way.ID_Road
+                    inner join High on Way.ID_Way = High.ID_Way
+                    inner join Attribute on High.ID_High = Attribute.ID_High
+                    inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+                    inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+                    inner join Group_Description on Types_Description.ID_Type_Attr = Group_Description.ID_Type_Attr
+                    where Road.Name = ? 
+
+                """  # and Group_Description.Item_Name = ?
+
+        self.cursor.execute(request, road_name)  # item
+
+        for i, param in enumerate(self.cursor.fetchall()):
+            icecream.ic(i, param)
+            tuple_km = tuple(
+                res_km.get(param[1], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
+
+            if tuple_km:
+                km = convert_m_to_km(param, tuple_km)
+            else:
+                km = ((0, param[-2]), (0, param[-1]))
+            coordinates = (*param[4::], *km)
+
+            if param[1] in res:
+
+                if param[2] in res.get(param[1]):
+                    if param[3] in res.get(param[1]).get(param[2]):
+
+                        res.get(param[1]).get(param[2]).get(param[3]).append(coordinates)
+                    else:
+                        res.get(param[1]).get(param[2]).update({param[3]: [coordinates]})
+                else:
+                    res.get(param[1]).update({param[2]: {param[3]: [coordinates]}})
+            else:
+                res.update({param[1]: {param[2]: {param[3]: [coordinates]}}})
+
+        # сортирует в словаре координаты по возрастанию
+        sort_dict_binding(res)
+        #print(res)
+        return dict(sorted(res.items()))
+
+    def get_dad_datas (self, name):
+        """ 29.06.2023 """
+        """
+        Вытаскиваем данные из бд и формируем словарь по атрибутам
+        :param attr_list: хранит в себе названия атрибутов
+        :param name: название автомобильной дороги 
+        :return: возвращаем словарь с данными по диагностике
+        """
+        dad_datas_dict = {}
+
+        attr_list = [
+            'Оценка ровности IRI', 'Глубина колеи', 'Граница участка дороги', 'Ось дороги', 'Кривая',
+            'Ширина проезжей части'
+        ]
+
+        request = """
+            select DISTINCT  High.Description, Group_Description.Item_Name, Types_Description.Param_Name,
+             Params.ValueParam, Attribute.L1, Attribute.L2
+            from Road 
+            inner join Way on Road.ID_Road = Way.ID_Way
+            inner join High on Way.ID_Way = High.ID_Way
+            inner join Attribute on High.ID_High = Attribute.ID_High 
+            inner join Params on Attribute.ID_Attribute = Params.ID_Attribute
+            inner join Types_Description on Params.ID_Param = Types_Description.ID_Param
+            inner join Group_Description on Attribute.ID_Type_Attr = Group_Description.ID_Type_Attr
+            where Road.Name = ? and Group_Description.Item_Name = 'Ось дороги' or Group_Description.Item_Name = 'Граница участка дороги'
+                       or Group_Description.Item_Name = 'Километровые знаки' or Group_Description.Item_Name = 'Кривая' or Group_Description.Item_Name = 'Оценка ровности IRI'
+                       or Group_Description.Item_Name  = 'Глубина колеи'   or Group_Description.Item_Name  = 'Ширина проезжей части'    
+        """
+        request_test = """
+                      select DISTINCT High.Description, Group_Description.Item_Name,Params.ValueParam, Attribute.L1, Attribute.L2
+                      from Road 
+                      inner join (select ID_Way from Way )as Way on Road.ID_Road = Way.ID_Way
+                      inner join (select ID_Way ,ID_High, Description from High)as High on Way.ID_Way = High.ID_Way
+                      inner join (select ID_High,ID_Attribute,ID_Type_Attr,L1,L2 from Attribute) as Attribute on High.ID_High = Attribute.ID_High 
+                      inner join (select ID_Type_Attr,Item_Name from Group_Description) as Group_Description on Attribute.ID_Type_Attr = Group_Description.ID_Type_Attr
+                      inner join (select ID_Attribute,ValueParam from Params )as Params on Attribute.ID_Attribute = Params.ID_Attribute
+                      where Road.Name = ? and Group_Description.Item_Name = 'Ось дороги' or Group_Description.Item_Name = 'Граница участка дороги'
+                       or Group_Description.Item_Name = 'Километровые знаки' or Group_Description.Item_Name = 'Кривая' or Group_Description.Item_Name = 'Оценка ровности IRI'
+                       or Group_Description.Item_Name  = 'Глубина колеи'   or Group_Description.Item_Name  = 'Ширина проезжей части'
+ 
+            
+                """
+        # and Group_Description.Item_Name = 'Ось дороги' or Group_Description.Item_Name =
+        # 'Граница участка дороги' or Group_Description.Item_Name = 'Километровые знаки'
+
+        self.cursor.execute(request, name)
+       #for num, attr in enumerate(attr_list):
+       #    icecream.ic('='*20, attr, '='*20)
+            # datas_dict = {
+            #     'Name': [], 'Description_uch1': [], 'L1-Начало': [], 'L2-Конец': [],
+            #     'ID_Param': [], 'ValueParam': [], 'ID_Type_Attr': [], 'Item_Name': []
+            # }
+        res_km = {}
+        for i, param in enumerate(self.cursor.fetchmany(5)):
+            """ заполяяем список данными из базы """
+
+            icecream.ic('DAD',i,param)
+            if param[0] in res_km:
+                if param[1] in res_km.get(param[0]):
+                    if param[2] in res_km.get(param[0]).get(param[1]):
+                        res_km.get(param[0]).get(param[1]).get(param[2]).append(param[3:])
+                    else:
+                        res_km.get(param[0]).get(param[1]).update({param[2]: [param[3::]]})
+                else:
+                    res_km.get(param[0]).update({param[1]: {param[2]: [param[3::]]}})
+            else:
+                res_km.update({param[0]: {param[1]: {param[2]: [param[3::]]}}})
+        icecream.ic(res_km)
+                # datas_dict['ID_Road'] = row[0]
+                # datas_dict['Name'] = row[1]
+                # datas_dict['ID_Way'].append(row[2])
+                # datas_dict['Description'].append(row[3])  # направление движения по записи
+                # datas_dict['ID_High'].append(row[4])
+                # datas_dict['Description_uch1'].append(row[5])
+                # datas_dict['ID_Attribute'].append(row[6])
+                # datas_dict['L1-Начало'].append(row[7])
+                # datas_dict['L2-Конец'].append(row[8])
+                # datas_dict['ID_Param'].append(row[9])
+                # datas_dict['ValueParam'].append(row[10])
+                # datas_dict['ID_Type_Attr'].append(row[11])
+                # datas_dict['Item_Name'].append(row[12])
+        #icecream.ic(res_km)
+        #for key, value in dad_datas_dict.items():
+        #    print(key, value)
+        #return dad_datas_dict
+
+
 
     def close_db (self):
         self.db.close()
@@ -661,19 +720,21 @@ def databases ():
 
 def main ():
     import time
-    db = Query('ZAP2023')  # FKU_VOLGO_VYATSK_1
+    db = Query('OMSK_REGION_2023')  # FKU_VOLGO_VYATSK_1
     list_roads = db.set_road_name()
-    # print(list_roads)
+    print(list_roads)
     # data = db.get_dad_datas('P-254')  # Р-176 "Вятка" Чебоксары - Йошкар-Ола - Киров - Сыктывкар
 
     start = time.time()  # точка отсчета времени
-    data_test = db.get_tp_datas(list_roads[1])
+    #data_dad = db.get_dad_datas(list_roads[-3])
+    data_tp = db.get_tp_datas(list_roads[1])
+    #db.get_km_sign_list(list_roads[-3])
     end = time.time() - start  # собственно время работы программы
     print(f"{round(end, 1)} секунд")  # вывод времени
-    print(data_test)
+    #print(data_test)
 
     # test(data)
-    # print(data)
+    print(data_tp)
     db.close_db()
     # with open(rf'{data.get("название дороги","отчет")}.txt', 'w', encoding = 'utf-8') as file:
     #     for key, val in data.items():
