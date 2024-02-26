@@ -269,8 +269,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         self.database_name = database_name
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
 
-        self.next_pushButton.clicked.connect(
-            self.get_info_window2)  # при нажатии кнопки далее выводится информация с текущего окна
+        #self.next_pushButton.clicked.connect( self.get_info_window2)  # при нажатии кнопки далее выводится информация с текущего окна
         self.next_pushButton.clicked.connect(
             self.check_tip_document)  # при нажатии кнопки далее проверяется выбран ли тип документ
         # self.tp_checkBox.toggled['bool'].connect(self.tp_checkbox_true)     # проверка кнопки ТП
@@ -331,7 +330,7 @@ class Window2(QtWidgets.QMainWindow, Ui_MainWindow2, JsonWorker):
         :return:
         """
         self.parent.show()
-        self.close()
+        self.hide()
 
     def get_info_window2 (self):
         """
