@@ -26,7 +26,7 @@ class WriterExcel:
         self.data_interface = data_interface
         if data_interface is None:
             self.data_interface = {'tip_passport': 'city'}
-        #self.msg = QMessageBox()
+        # self.msg = QMessageBox()
         self.table_cells_font = Font(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
@@ -41,7 +41,7 @@ class WriterExcel:
             self.wb.save(rf'{self.path_dir}\{self.tip_doc}_{name_file}.xlsm')
         except Exception as e:
             QMessageBox.information(None, f"Ошибка", f'Ошибка сохранения файла: {e}',
-                                 QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.NoButton)
+                                    QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.NoButton)
         self.close_file()
 
     def close_file (self):
@@ -175,7 +175,7 @@ class WriterExcelTP(WriterExcel):
         ws["AL10"] = self.data.get('название дороги', 'дорога')
 
         for key, value in self.data.items():
-            if key == 'название дороги':
+            if isinstance(value, str):
                 continue
             id_key = list(self.data.keys()).index(key)
             try:
@@ -321,7 +321,7 @@ class WriterExcelTP(WriterExcel):
 
         row_name_distr = 15  # счетчик строк для 2.8
         for k1, v1 in self.data.items():
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             # try:
             for idx, v2 in enumerate(v1.get('Дорожная организация', {}).get('Наименование', [])):
@@ -437,7 +437,7 @@ class WriterExcelTP(WriterExcel):
         # 4.3 Характеристика проезжей части
         # 4.3.1 Ширина проезжей части
         for key, val in self.data.items():
-            if key == 'название дороги':
+            if isinstance(val, str):
                 continue
             else:
                 if len(self.data) > 2:
@@ -609,7 +609,7 @@ class WriterExcelTP(WriterExcel):
         counter = 0
         sum_res = {}
         for k1, v1 in self.data.items():
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             else:
                 column = column_tuple[counter]
@@ -771,7 +771,7 @@ class WriterExcelTP(WriterExcel):
             'Сигнальные столбики': 0
         }
         for k1, v1 in self.data.items():
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             # 4.4
             slopes_list = v1.get('Кривая', {}).get('Продольный уклон', [])
@@ -1067,7 +1067,7 @@ class WriterExcelTP(WriterExcel):
         rows_sto = 37
         rows_hotels = 37
         for name_district, obj in self.data.items():
-            if name_district == 'название дороги':
+            if isinstance(obj, str):
                 continue
 
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
@@ -1104,7 +1104,7 @@ class WriterExcelTP(WriterExcel):
         rows_ws = 37
         rows_food = 37
         for name_district, obj in self.data.items():
-            if name_district == 'название дороги':
+            if isinstance(obj, str):
                 continue
 
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
@@ -1172,7 +1172,7 @@ class WriterExcelTP(WriterExcel):
         ws = self.wb['14']
         rows_medical = 8
         for name_district, obj in self.data.items():
-            if name_district == 'название дороги':
+            if isinstance(obj, str):
                 continue
             for idx, value in enumerate(obj.get('Здание', {}).get('Назначение', [])):
                 if value[0] == 'Пункт первой медпомощи/почта/телефон':
@@ -1376,7 +1376,7 @@ class WriterExcelTP(WriterExcel):
             return retaining_walls
 
         for k, v in self.data.items():
-            if k == 'название дороги':
+            if isinstance(v, str):
                 continue
 
             column_left = columns_left[counter]
@@ -1512,7 +1512,7 @@ class WriterExcelTP(WriterExcel):
 
         for k1, v1 in self.data.items():
             total_shoulders = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
 
             column_l = column_tuple_left[counter]
@@ -1553,7 +1553,7 @@ class WriterExcelTP(WriterExcel):
             ws[f'{column_l}36'] = round(sum_sidewalk, 3) if sum_sidewalk != 0 else '-'
             ws[f'{column_l}37'] = round(sum_pedestrian_path, 3) if sum_pedestrian_path != 0 else '-'
             ws[f'{column_l}39'] = round(sum_sidewalk + sum_pedestrian_path, 3) if (
-                                                                                              sum_sidewalk + sum_pedestrian_path) != 0 else '-'
+                                                                                          sum_sidewalk + sum_pedestrian_path) != 0 else '-'
             res_sum_4_10_7[0] += sum_sidewalk
             res_sum_4_10_7[1] += sum_pedestrian_path
 
@@ -1697,12 +1697,54 @@ class WriterExcelTP(WriterExcel):
 
 
 class WriterExcelDAD(WriterExcel):
-    def __init__ (self, data: dict = None, path = None, data_interface = None):
-        super().__init__(data, path_template_excel = path_template_excel_dad, path=path, data_interface = data_interface)
-        self.tip_doc = 'Диагностика'
-        #self.write_titular()
-        self.write_note()
+    # 0Ширина полосы движения, м
+    # 1Ширина обочины, м
+    # 2Расчетная скорость, км / ч
+    # 3Наименьший радиус кривой в плане, м
+    # 4Наибольший продольный уклон, ‰
+    # 5Продольная ровность, м / км, не более
+    # 6Требуемый модуль упругости, Мпа, не менее
+    # 7Ширина укрепленной обочины
 
+    DICT_NORMATIVE_VALUE = {'IА': (3.75, 3.75, 150, 1200, 30, 4, 230, None),
+                            'IБ': (3.75, 3.75, 120, 800, 40, 4, 230, None),
+                            'IВ': (3.75, 3.5, 100, 600, 50, 4.5, 230, None),
+                            'II': (3.75, 3.5, 120, 800, 40, 4.5, 220, 2),
+                            'III': (3.5, 2.5, 100, 600, 50, 5, 200, 1.5),
+                            'IV': (3, 2, 80, 300, 60, 6.5, 150, 1),
+                            'IVА-р': (3, 2, 80, 265, 60, 6.5, 200, 1),
+                            'IVБ-р': (3, 1.5, 60, 125, 70, 6.5, 200, 0.75),
+                            'IVА-п': (3, 2, 70, 185, 60, 6.5, 150, 0.75),
+                            'IVБ-п': (3, 2, 60, 125, 70, 6.5, 150, 0.75),
+                            'V': (4.5, 1.75, 60, 150, 70, 7.5, 100, None),
+                            'VА': (4.5, 1.5, 50, 85, 70, 7.5, 100, None),
+                            'VБ': (4.5, 1.5, 40, 50, 80, 7.5, None, None),
+                            }
+    # 0Капитальный,1Облегченный,2Переходный,3Низший
+    IRI = {
+        'IА': (4, None, None, None),
+        'IБ': (4, None, None, None),
+        'IВ': (4.5, None, None, None),
+        'II': (4.5, None, None, None),
+        'III': (5, 5.5, 5.5, None),
+        'IV': (6, 6.5, 6.5, None),
+        'IVА-р': (6, 6.5, 6.5, None),
+        'IVБ-р': (6, 6.5, 6.5, None),
+        'IVА-п': (6, 6.5, 6.5, None),
+        'IVБ-п': (6, 6.5, 6.5, None),
+        'V': (None, 7.5, 8, None),
+        'VА': (None, 7.5, 8, None),
+        'VБ': (None, 7.5, 8, None)
+    }
+
+    def __init__ (self, data: dict = None, path = None, data_interface = None):
+        super().__init__(data, path_template_excel = path_template_excel_dad, path = path,
+                         data_interface = data_interface)
+        self.tip_doc = 'Диагностика'
+        self.total_cells_aligment = Alignment(horizontal = 'right', vertical = 'center')
+        # self.write_titular()
+        # self.write_note()
+        self.write_roadway_width()
 
     def write_titular (self):
         ws = self.wb['Титульный']
@@ -1831,10 +1873,10 @@ class WriterExcelDAD(WriterExcel):
             if isinstance(value, str):
                 continue
             start, end = value.get('Ось дороги', {}).get('Начало трассы', [])[0][9:]
-            start_str, end_str = self.change_start_and_end_obj(start,end)
+            start_str, end_str = self.change_start_and_end_obj(start, end)
             if count_distr > 2:
                 ws[f'A{i}'] = f"Начало {key}: {start_str} км"
-                ws[f'A{i+1}'] = f"Конец {key}: {end_str} км"
+                ws[f'A{i + 1}'] = f"Конец {key}: {end_str} км"
                 i += 2
             else:
                 ws['A14'] = f"Начало дороги: {start_str} км"
@@ -1854,11 +1896,12 @@ class WriterExcelDAD(WriterExcel):
             ws[f'K{row}'] = value.get('Граница участка дороги', {}).get('количество полос')[0][0]
 
             for idx, category in enumerate(tuple_cateregory):
-                #задаю рамки для всех клеток в диапазоне
+                # задаю рамки для всех клеток в диапазоне
                 for col in range(1, 12):
                     ws.cell(row = row, column = col).border = self.table_cells_border
                     ws.cell(row = row, column = col).alignment = self.table_cells_aligment
-                #объединяю ячейки
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                # объединяю ячейки
                 ws.merge_cells(f'E{row}:H{row}')
                 ws.merge_cells(f'I{row}:J{row}')
                 if category[0] == last_cat[0] and tuple_coating[idx][0] == last_coating[0] and idx != 0:
@@ -1892,9 +1935,103 @@ class WriterExcelDAD(WriterExcel):
                 last_cat = category
                 last_coating = tuple_coating[idx]
 
+    def get_category (self, list_width: list[tuple], list_cat: tuple):
+        '''
+        объединяет и соотносит створы с категориями, количеством полос, видом покрытия
+        '''
+        res = []
+
+        for width in list_width:
+            for idx, category in enumerate(list_cat):
+                if width[-2] <= category[-2]:
+                    res.append((*list_cat[idx - 1][0:3], float(width[0]), *width[1:]))
+                    break
+                elif width[-2] > list_cat[-1][-2]:
+                    res.append((*list_cat[-1][0:3], float(width[0]), *width[1:]))
+                    break
+                elif width[-2] > category[-2]:
+                    continue
+        # print(list_cat)
+        return res
+
+    def write_roadway_width (self):
+        row = 8
+        сompliant = 0
+        noсompliant = 0
+        length = 0
+        ws = self.wb['Ширина проезжей части']
+        for key, value in self.data.items():
+            if isinstance(value, str):
+                continue
+
+            tuple_category = tuple((category[0], float(count_line[0]), *tip_travel_clothing) for category,
+            count_line, tip_travel_clothing in zip(value.get('Граница участка дороги', {}).get('категория а/д'),
+                                                   value.get('Граница участка дороги', {}).get('количество полос'),
+                                                   value.get('Граница участка дороги', {}).get('тип дорожной одежды')))
+            print(value.get('Ширина проезжей части').get('Ширина ПЧ'))
+            roadway_width = self.get_category(value.get('Ширина проезжей части').get('Ширина ПЧ'),
+                                              tuple_category)
+
+            required_width = self.DICT_NORMATIVE_VALUE.get(roadway_width[0][0])[0] * roadway_width[0][1]
+            if len(self.data)>2:
+                #ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:I{row}')
+                ws[f'A{row}'] = key
+
+                row += 1
+            ws[f'A{row}'] = roadway_width[0][-2][0]  # начало км
+            ws[f'B{row}'] = roadway_width[0][-2][1]  # начало м
+            ws[f'C{row}'] = roadway_width[0][-1][0]  # конец км
+            ws[f'D{row}'] = roadway_width[0][-1][1]  # конец м
+            ws[f'E{row}'] = roadway_width[1][-4] - roadway_width[0][-4]  # протяженность
+            # print((roadway_width[1][-4] - roadway_width[0][-4]))
+            ws[f'F{row}'] = roadway_width[0][3]  # измеренная
+            ws[f'G{row}'] = required_width
+            ws[f'H{row}'] = required_width - roadway_width[0][3]  # разница
+            ws[f'I{row}'] = 'Соответсвует' if required_width - roadway_width[0][3] <= 0.5 else 'Несоответствует'  # Соответсвует/Несоответствует
+            length += value.get('Ось дороги').get('Начало трассы')[0][2]
+        for idx, width in enumerate(roadway_width):
+
+            for col in range(1, 10):
+                ws.cell(row = row + 1, column = col).border = self.table_cells_border
+                ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
+                ws.cell(row = row + 1, column = col).font = self.table_cells_font
+            if idx == 0:
+                last_width = width
+                continue
+            required_width = self.DICT_NORMATIVE_VALUE.get(width[0])[0] * width[1]  # Требуемая
+
+            ws[f'C{row}'] = width[-2][0]  # конец км
+            ws[f'D{row}'] = width[-2][1]  # конец м
+            row += 1
+            ws[f'A{row}'] = width[-2][0]
+            ws[f'B{row}'] = width[-2][1]
+            ws[f'C{row}'] = width[-1][0]
+            ws[f'D{row}'] = width[-1][1]
+            ws[f'E{row}'] = width[-4] - last_width[-4]  # протяженность
+            ws[f'F{row}'] = width[3]  # измеренная
+            ws[f'G{row}'] = required_width  # Требуемая
+            ws[f'H{row}'] = required_width - width[3]  # разница
+            if abs(required_width - width[3]) <= 0.5:
+                ws[f'I{row}'] = 'Соответсвует'
+                сompliant += width[-4] - last_width[-4]
+            else:
+                ws[f'I{row}'] = 'Несоответствует'  # Соответсвует/Несоответствует
+                noсompliant += width[-4] - last_width[-4]
+            last_width = width
+
+        row += 2
+
+        ws[f'I{row}'] = f'Протяженность: {length} м'
+        ws[f'I{row}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 1}'] = f'Соответствует: {сompliant} м'
+        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 2}'] = f'Не соответствует: {noсompliant} м'
+        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+
 
 class WriterApplication(WriterExcel):
-    def __init__ (self, data: dict = None, path = None, data_interface = None):
+    def __init__ (self, data: dict = None, path: str = None, data_interface: dict = None):
         super().__init__(data = data, path_template_excel = path_template_excel_application, path = path,
                          data_interface = data_interface)
         self.tip_doc = 'Приложение'
@@ -1964,7 +2101,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
 
             if len(self.data) > 2:
@@ -2060,7 +2197,7 @@ class WriterApplicationCityTP(WriterApplication):
 
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:L{row}')
@@ -2159,7 +2296,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'D{row}:K{row}')
@@ -2235,7 +2372,7 @@ class WriterApplicationCityTP(WriterApplication):
 
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 for col in range(3, 12):
@@ -2320,7 +2457,7 @@ class WriterApplicationCityTP(WriterApplication):
 
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'C{row}:J{row}')
@@ -2394,7 +2531,7 @@ class WriterApplicationCityTP(WriterApplication):
         lenght_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'D{row}:L{row}')
@@ -2479,7 +2616,7 @@ class WriterApplicationCityTP(WriterApplication):
         lenght_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:I{row}')
@@ -2555,7 +2692,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:K{row}')
@@ -2646,7 +2783,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:I{row}')
@@ -2728,7 +2865,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:L{row}')
@@ -2834,7 +2971,7 @@ class WriterApplicationCityTP(WriterApplication):
         count_sum = 0  # количество штук
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:I{row}')
@@ -2916,7 +3053,7 @@ class WriterApplicationCityTP(WriterApplication):
         for k1, v1 in self.data.items():
             counter = 0
 
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'C{row}:J{row}')
@@ -2989,7 +3126,7 @@ class WriterApplicationCityTP(WriterApplication):
         for k1, v1 in self.data.items():
             counter = 0
             list_sign = []
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
 
             for k2, v2 in v1.items():
@@ -3083,7 +3220,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum_fence = 0
         check_sign_column = False
         for k1, v1 in self.data.items():
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             counter = 0
 
@@ -3186,7 +3323,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:K{row}')
@@ -3274,7 +3411,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
 
             list_comunications = v1.get('Воздушная коммуникация', {}).get('Вид коммуникации', []) + v1.get(
@@ -3372,7 +3509,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:N{row}')
@@ -3494,7 +3631,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:O{row}')
@@ -3634,7 +3771,7 @@ class WriterApplicationCityTP(WriterApplication):
         for k1, v1 in self.data.items():
 
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
 
             list_radius = [j for i in v1.get('Кривая', {}).get('№ угла', []) for j in v1.get('Кривая', {}).get('R', [])
@@ -3832,7 +3969,7 @@ class WriterApplicationCityTP(WriterApplication):
         counter_sum = 0
         for k1, v1 in self.data.items():
             counter = 0
-            if k1 == 'название дороги':
+            if isinstance(v1, str):
                 continue
             if len(self.data) > 2:
                 ws.merge_cells(f'B{row}:J{row}')
@@ -3920,7 +4057,7 @@ def convert_visio2svg (path_dir, name, ):
     visio.Quit()
 
 
-def new_titel (name_road, output):
+def new_titel (name_road):
     import win32com.client
 
     excel = win32com.client.Dispatch("Excel.Application")
@@ -3936,8 +4073,8 @@ def new_titel (name_road, output):
 def main ():
     conn = db.Query('OMSK_REGION_2023')  # 'IZHEVSK_CITY_2023'
     list_roads = conn.set_road_name()
-    data = conn.get_tp_datas(list_roads[1])  # 'М14 Е105 - до с.Вишневое'
-    #print(data)
+    data = conn.get_dad_datas(list_roads[1])  # 'М14 Е105 - до с.Вишневое'
+    # print(data)
     conn.close_db()
     diсt_inter = {'year': 2024,
                   'tip_passport': 'city',
@@ -3945,13 +4082,14 @@ def main ():
                   'area_conditioins': ''}
     # reports = WriterExcelTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
     #                         data_interface = diсt_inter)
-    #apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
-     #                         data_interface = diсt_inter)
-    dad = WriterExcelDAD(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version', data_interface = diсt_inter)
+    # apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
+    #                         data_interface = diсt_inter)
+    dad = WriterExcelDAD(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
+                         data_interface = diсt_inter)
     dad.save_file()
     # apps = WriterApplicationCityTP(data = data,
     #                                path = r'C:\Users\sibregion\Desktop\test\report\тест_рамок_пдф\Приложения')
-    #apps.save_file()
+    # apps.save_file()
 
     # for name in conn.get_list_roads():
     #     print(name)
