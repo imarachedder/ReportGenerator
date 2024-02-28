@@ -360,7 +360,7 @@ import settings
 # Дорожные знаки, количество
 
 
-def sort_dict_binding (res):
+def sort_dict_binding (res:dict[str, dict[str, dict[str, list[tuple]]]]):
     '''
      сортирует словарь с объектами по первой метровой привязке
     :param res:
@@ -376,7 +376,8 @@ def sort_dict_binding (res):
                 elem.sort(key = lambda x: (x[-2], x[-1]))
 
 
-def convert_m_to_km (param, list_km):
+
+def convert_m_to_km (param: tuple, list_km: list[tuple]):
     '''
         переводит метры в километры с привязкой к километровым знакам
         :param param: строка из базы данных
@@ -533,7 +534,6 @@ class Query:
             максимальное отклонение, начало_метры, конец_метры, (начало_километры,начало_метры),
             (конец_километры, конец_метры)), ....], ...}, ...}, ...}
         :return:
-
         """
 
         res_km = self.get_km_sign_list(road_name)
@@ -572,7 +572,7 @@ class Query:
         res = {'название дороги': f'{road_name}', }
 
         request = """
-                    select  Road.Name,  High.Description, Group_Description.Item_Name, 
+                    select DISTINCT Road.Name,  High.Description, Group_Description.Item_Name, 
                     Types_Description.Param_Name, Params.ValueParam, dbo.CalcLength(ATTRIBUTE.Image_Points) as Length, 
                     dbo.CalcSquare(ATTRIBUTE.Image_Points) as Square, Params.ID_Param, dbo.GetCountPoint(Image_Points),
                     dbo.Amin(Image_Points) as Amin, dbo.Amax(Image_Points) as Amax,
