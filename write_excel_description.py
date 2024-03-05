@@ -1,12 +1,19 @@
 import math
+from copy import deepcopy
 from pathlib import Path
 
 import win32com.client
 from PyQt6.QtWidgets import QMessageBox
 from icecream import ic
 from openpyxl import load_workbook
+from openpyxl.chart import Reference, ScatterChart, BarChart, PieChart
+from openpyxl.chart.label import DataLabelList
+from openpyxl.chart.marker import DataPoint
+from openpyxl.chart.series import Series
+from openpyxl.chart.text import RichText
 from openpyxl.drawing.image import Image
-from openpyxl.styles import Alignment, Side, Border, Font
+from openpyxl.drawing.text import ParagraphProperties, CharacterProperties, Paragraph, Font as FontText
+from openpyxl.styles import Alignment, Side, Border, colors, Font as FontStyle
 
 import db
 from settings import path_template_excel, path_template_excel_application, path_template_excel_dad
@@ -27,7 +34,7 @@ class WriterExcel:
         if data_interface is None:
             self.data_interface = {'tip_passport': 'city'}
         # self.msg = QMessageBox()
-        self.table_cells_font = Font(name = 'Times New Roman', size = 12)
+        self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
         self.table_cells_aligment = Alignment(horizontal = 'center', vertical = 'center', wrap_text = True)
@@ -1696,6 +1703,36 @@ class WriterExcelTP(WriterExcel):
     #     ws.add_image(self.img, 'B5')
 
 
+def set_chart_text_style (chart):
+    '''изменяет расмер и стиль текста на диаграмме
+
+    :param chart:  объект диаграмма
+    :return:
+    '''
+    # стиль шрифт
+    font = FontText(typeface = 'Times New Roman')
+    # создаём загаловок
+    cp_title = CharacterProperties(sz = 1400, latin = font)
+    cp_legend = CharacterProperties(sz = 1200, latin = font)
+    cp_other = CharacterProperties(sz = 1000, latin = font)
+    pp_legend = ParagraphProperties(defRPr = cp_legend)
+    pp_title = ParagraphProperties(defRPr = cp_title)
+    pp_other = ParagraphProperties(defRPr = cp_other)
+    rt = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)])
+
+    for para in chart.title.tx.rich.paragraphs:
+        para.pPr = pp_title
+    # задаем шрифт текста заголовка оси Y
+    if isinstance(chart,BarChart):
+        chart.y_axis.title.tx.rich.p[0].pPr = pp_other
+        chart.x_axis.txPr = rt
+        chart.y_axis.txPr = rt
+    else:
+        chart.dataLabels.txPr = RichText(p = [Paragraph(pPr = pp_title, endParaRPr = cp_title )])
+    chart.legend.txPr = RichText(p = [Paragraph(pPr = pp_legend, endParaRPr = cp_legend)])
+    chart.title.tx.rich.paragraphs[0].properties.rPr = pp_other
+
+
 class WriterExcelDAD(WriterExcel):
     # 0Ширина полосы движения, м
     # 1Ширина обочины, м
@@ -1745,6 +1782,7 @@ class WriterExcelDAD(WriterExcel):
         # self.write_titular()
         # self.write_note()
         self.write_roadway_width()
+        # self.create_diagramm()
 
     def write_titular (self):
         ws = self.wb['Титульный']
@@ -1772,89 +1810,6 @@ class WriterExcelDAD(WriterExcel):
 
         except FileNotFoundError:
             self.errors.write(f'{self.tip_doc} Cхема: Файл Схема.png отсутствует в {self.path_dir}\n')
-
-    # def write_diagrams1 (self):
-    #     """
-    #     Разница ширины проезжей части от требуемого значения по расстоянию
-    #     """
-    #     wb = Workbook()
-    #     ws = wb.active
-    #
-    #     # данные для построения диаграмм
-    #     rows = [
-    #         ('Number', 'Batch 1', 'Batch 2'),
-    #         (2, 10, 30),
-    #         (3, 40, 60),
-    #         (4, 50, 70),
-    #         (5, 20, 10),
-    #         (6, 10, 40),
-    #         (7, 50, 30),
-    #     ]
-    #     for row in rows:
-    #         ws.append(row)
-    #
-    #     # ДИАГРАММА №1
-    #     # создаем объект диаграммы
-    #     chart1 = BarChart()
-    #     # установим тип - `вертикальные столбцы`
-    #     chart1.type = "col"
-    #     # установим стиль диаграммы (цветовая схема)
-    #     chart1.style = 10
-    #     # заголовок диаграммы
-    #     chart1.title = "Столбчатая диаграмма"
-    #     # подпись оси `y`
-    #     chart1.y_axis.title = 'Длина выборки'
-    #     # показывать данные на оси (для LibreOffice Calc)
-    #     chart1.y_axis.delete = False
-    #     # подпись оси `x`
-    #     chart1.x_axis.title = 'Номер теста'
-    #     chart1.x_axis.delete = False
-    #     # выберем 2 столбца с данными для оси `y`
-    #     data = Reference(ws, min_col = 2, max_col = 3, min_row = 1, max_row = 7)
-    #     # теперь выберем категорию для оси `x`
-    #     categor = Reference(ws, min_col = 1, min_row = 2, max_row = 7)
-    #     # добавляем данные в объект диаграммы
-    #     chart1.add_data(data, titles_from_data = True)
-    #     # установим метки на объект диаграммы
-    #     chart1.set_categories(categor)
-    #     # добавим диаграмму на лист, в ячейку "A10"
-    #     ws.add_chart(chart1, "A10")
-    #
-    #     # ДИАГРАММА №2
-    #     # что бы показать типы столбчатых диаграмм, скопируем
-    #     # первую диаграмму и будем менять настройки
-    #     chart2 = deepcopy(chart1)
-    #     # изменяем стиль
-    #     chart2.style = 11
-    #     # установим тип - `горизонтальные полосы`
-    #     chart2.type = "bar"
-    #     chart2.title = "Горизонтальные полосы"
-    #     ws.add_chart(chart2, "A25")
-    #
-    #     # ДИАГРАММА №3
-    #     chart3 = deepcopy(chart1)
-    #     chart3.type = "col"
-    #     chart3.style = 12
-    #     # зададим группировку
-    #     chart3.grouping = "stacked"
-    #     # для диаграммы с группировкой,
-    #     # необходимо установить перекрытие
-    #     chart3.overlap = 100
-    #     chart3.title = 'Сложенная диаграмма'
-    #     ws.add_chart(chart3, "A40")
-    #
-    #     # ДИАГРАММА №4
-    #     chart4 = deepcopy(chart1)
-    #     chart4.type = "bar"
-    #     chart4.style = 13
-    #     chart4.grouping = "percentStacked"
-    #     chart4.overlap = 100
-    #     # отключим линии сетки
-    #     chart4.y_axis.majorGridlines = None
-    #     # уберем легенду
-    #     chart4.legend = None
-    #     chart4.title = 'Диаграмма с процентным накоплением'
-    #     ws.add_chart(chart4, "A55")
 
     def write_note (self):
         '''
@@ -1959,6 +1914,7 @@ class WriterExcelDAD(WriterExcel):
         сompliant = 0
         noсompliant = 0
         length = 0
+        list_required_width = []
         ws = self.wb['Ширина проезжей части']
         for key, value in self.data.items():
             if isinstance(value, str):
@@ -1973,8 +1929,9 @@ class WriterExcelDAD(WriterExcel):
                                               tuple_category)
 
             required_width = self.DICT_NORMATIVE_VALUE.get(roadway_width[0][0])[0] * roadway_width[0][1]
-            if len(self.data)>2:
-                #ws.unmerge_cells(f'A{row}:I{row}')
+            list_required_width.append(roadway_width[0][3] - required_width)
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
                 ws.merge_cells(f'A{row}:I{row}')
                 ws[f'A{row}'] = key
 
@@ -1987,8 +1944,9 @@ class WriterExcelDAD(WriterExcel):
             # print((roadway_width[1][-4] - roadway_width[0][-4]))
             ws[f'F{row}'] = roadway_width[0][3]  # измеренная
             ws[f'G{row}'] = required_width
-            ws[f'H{row}'] = required_width - roadway_width[0][3]  # разница
-            ws[f'I{row}'] = 'Соответсвует' if required_width - roadway_width[0][3] <= 0.5 else 'Несоответствует'  # Соответсвует/Несоответствует
+            ws[f'H{row}'] = roadway_width[0][3] - required_width  # разница
+            ws[f'I{row}'] = 'Соответсвует' if required_width - roadway_width[0][
+                3] <= 0.5 else 'Несоответствует'  # Соответсвует/Несоответствует
             length += value.get('Ось дороги').get('Начало трассы')[0][2]
         for idx, width in enumerate(roadway_width):
 
@@ -2000,7 +1958,7 @@ class WriterExcelDAD(WriterExcel):
                 last_width = width
                 continue
             required_width = self.DICT_NORMATIVE_VALUE.get(width[0])[0] * width[1]  # Требуемая
-
+            list_required_width.append(width[3] - required_width)
             ws[f'C{row}'] = width[-2][0]  # конец км
             ws[f'D{row}'] = width[-2][1]  # конец м
             row += 1
@@ -2011,12 +1969,12 @@ class WriterExcelDAD(WriterExcel):
             ws[f'E{row}'] = width[-4] - last_width[-4]  # протяженность
             ws[f'F{row}'] = width[3]  # измеренная
             ws[f'G{row}'] = required_width  # Требуемая
-            ws[f'H{row}'] = required_width - width[3]  # разница
-            if abs(required_width - width[3]) <= 0.5:
+            ws[f'H{row}'] = width[3] - required_width  # разница
+            if abs(width[3] - required_width) <= 0.5:
                 ws[f'I{row}'] = 'Соответсвует'
                 сompliant += width[-4] - last_width[-4]
             else:
-                ws[f'I{row}'] = 'Несоответствует'  # Соответсвует/Несоответствует
+                ws[f'I{row}'] = 'Не соответствует'  # Соответсвует/Несоответствует
                 noсompliant += width[-4] - last_width[-4]
             last_width = width
 
@@ -2028,6 +1986,122 @@ class WriterExcelDAD(WriterExcel):
         ws[f'I{row + 1}'].alignment = self.total_cells_aligment
         ws[f'I{row + 2}'] = f'Не соответствует: {noсompliant} м'
         ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+        list_required_width = tuple(list_required_width)
+        print(list_required_width)
+        self.create_bar_char_diagramm(tuple_differences = list_required_width,
+                                      title="Разница ширины проезжей части от требуемого значения по расстоянию",
+                                      calculationObject = self.data.get('весь участок').get('Ширина проезжей части').get('Ширина ПЧ'))
+
+    def create_bar_char_diagramm(self, tuple_differences = None, title = None, calculationObject = None):
+
+        ws = self.wb['Диаграммы']
+        row = 1
+        ws.cell(row = row, column = 2, value = 'Соответствует')
+        ws.cell(row = row, column = 3, value = 'Не соответствует')
+        row += 1
+        pos = 0
+        neg = 0
+
+        for i, diff in zip(calculationObject, tuple_differences):
+            if abs(diff) <= 0.5:
+                # print('Соответствует',abs(diff))
+                ws.cell(row = row, column = 1, value = i[-3])
+                ws.cell(row = row, column = 2, value = diff)
+                ws.cell(row = row, column = 3, value = 0)
+                pos += i[-3]
+            else:
+                ws.cell(row = row, column = 1, value = i[-3])
+                ws.cell(row = row, column = 2, value = 0)
+                ws.cell(row = row, column = 3, value = diff)
+                neg += i[-3]
+            row += 1
+        ws.cell(row = row, column = 2, value = pos)
+        ws.cell(row = row, column = 3, value = neg)
+        # ДИАГРАММА №1
+        # создаем объект диаграммы
+        chart = BarChart(gapWidth = 0, overlap = 100)
+        # установим тип - `вертикальные столбцы`
+        chart.type = "col"
+        chart.grouping = "clustered"
+        # установим стиль диаграммы (цветовая схема)
+        chart.style = 2
+        # заголовок диаграммы
+        chart.title = title
+
+        # подпись оси `y`
+        chart.y_axis.title = 'Допустимый диапазон'
+
+        # показывать данные на оси
+        chart.y_axis.delete = False
+        # подпись оси `x`
+        chart.x_axis.delete = False
+        # выберем 2 столбца с данными для оси `y`
+        y = Reference(ws, min_col = 2, max_col = 3, min_row = 1, max_row = row - 1)
+        # теперь выберем категорию для оси `x`
+        x = Reference(worksheet = ws, min_col = 1, max_col = 1, min_row = 2, max_row = row - 1)
+
+        # добавляем данные в объект диаграммы
+
+        chart.add_data(y, titles_from_data = True)
+        # установим метки на объект диаграммы
+        chart.set_categories(x)
+
+        # создаем серию для положительных значений
+        positive_series = chart.series[0]
+
+        positive_series.graphicalProperties.solidFill = '008000'  # зеленый цвет
+
+        # создаем серию для отрицательных значений
+        negative_series = chart.series[1]
+        negative_series.graphicalProperties.solidFill = 'FF0000'  # красный цвет
+
+        # добавляем легенду
+        legend = chart.legend
+        legend.position = 'b'
+        legend.include_in_layout = False
+
+        chart.width = 19
+        chart.height = 10
+        set_chart_text_style(chart)
+
+        # добавляем диаграмму на лист
+        ws.add_chart(chart, 'A1')
+        self.create_pie_chart(ws, row,title='Общая оценка соответствия ширины проезжей части')
+
+    def create_pie_chart (self, ws, row, title = None):
+        # круговая диаграмма
+        chart_pie = PieChart()
+        chart_pie.type = "bar"
+        chart_pie.grouping = "stacked"
+        chart_pie.style = 2
+
+        chart_pie.title = title
+        chart_pie.width = 19
+        chart_pie.height = 10
+        labels = Reference(ws, min_row = 1, max_row = 1, min_col = 2, max_col = 3)
+        data = Reference(ws, min_row = row, max_row = row, min_col = 2, max_col = 3)
+        chart_pie.add_data(data, from_rows = True)
+        chart_pie.set_categories(labels)
+        chart_pie.dataLabels = DataLabelList()
+        # Show the percent on the labels.
+        chart_pie.dataLabels.showPercent = True
+        chart_pie.dataLabels.position='ctr'
+
+        series = chart_pie.series[0]
+        positive_dp = DataPoint(idx = 0)
+        negative_dp = DataPoint(idx = 1)
+        negative_dp.graphicalProperties.solidFill = 'FF0000'
+        positive_dp.graphicalProperties.solidFill = '008000'
+        series.data_points = [positive_dp, negative_dp]
+        series.marker.symbol = "circle"
+
+
+        legend = chart_pie.legend
+        legend.position = 'b'
+        legend.include_in_layout = False
+
+        ws.add_chart(chart_pie, 'A20')
+        set_chart_text_style(chart_pie)
 
 
 class WriterApplication(WriterExcel):
@@ -2041,8 +2115,8 @@ class WriterApplicationCityTP(WriterApplication):
     def __init__ (self, data: dict = None, path = None, data_interface = None):
         super().__init__(data = data, path = path, data_interface = data_interface)
 
-        self.cells_font_result = Font(name = 'Times New Roman', size = 12, bold = True)
-        self.table_cells_font = Font(name = 'Times New Roman', size = 12)
+        self.cells_font_result = FontStyle(name = 'Times New Roman', size = 12, bold = True)
+        self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         # thick = Side(border_style = "thick", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
