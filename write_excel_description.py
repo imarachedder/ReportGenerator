@@ -1828,10 +1828,11 @@ class WriterExcelDAD(WriterExcel):
             if isinstance(value, str):
                 continue
             one_width = value.get('Ширина проезжей части').get('Ширина ПЧ')[0]
-            tuple_roadway_width = tuple((float(i[0]), *i[1:]) for i in value.get('Ширина проезжей части').get('Ширина ПЧ')[1:])
+            tuple_roadway_width = tuple(
+                (float(i[0]), *i[1:]) for i in value.get('Ширина проезжей части').get('Ширина ПЧ')[1:])
             list_category = self.get_category(tuple_roadway_width, value)
             required_width = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[0] * list_category[0][1]
-            #list_required_width.append(roadway_width[0][3] - required_width)
+            # list_required_width.append(roadway_width[0][3] - required_width)
             difference_width = float(one_width[0]) - required_width
             list_difference_width.append(difference_width)
             if len(self.data) > 2:
@@ -1866,14 +1867,15 @@ class WriterExcelDAD(WriterExcel):
                 #     last_width=0
 
                 if idx != len(tuple_roadway_width) - 1:
-                    last_width = tuple_roadway_width[idx+1]
+                    last_width = tuple_roadway_width[idx + 1]
                 else:
                     last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
 
-                    #ws[f'C{row}'] = width[-2][0]  # конец км
-                    #ws[f'D{row}'] = width[-2][1]  # конец м
-                    #ws[f'E{row}'] = width[-4] - last_width[-4]  # протяженность
-                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[0] * list_category[idx][1]  # Требуемая
+                    # ws[f'C{row}'] = width[-2][0]  # конец км
+                    # ws[f'D{row}'] = width[-2][1]  # конец м
+                    # ws[f'E{row}'] = width[-4] - last_width[-4]  # протяженность
+                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[0] * list_category[idx][
+                    1]  # Требуемая
                 difference_width = width[0] - required_width
                 list_difference_width.append(difference_width)
                 lenght_segment = last_width[-3] - width[-3]
@@ -1892,11 +1894,11 @@ class WriterExcelDAD(WriterExcel):
                 else:
                     ws[f'I{row}'] = 'Не соответствует'
                     negative_counter += abs(lenght_segment)
-                #last_width = width
+                # last_width = width
 
-            #ws[f'C{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][0]  # конец км
-            #ws[f'D{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][1]  # конец м
-            #ws[f'E{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-3] - last_width
+            # ws[f'C{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][0]  # конец км
+            # ws[f'D{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][1]  # конец м
+            # ws[f'E{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-3] - last_width
 
         row += 2
 
@@ -1908,36 +1910,72 @@ class WriterExcelDAD(WriterExcel):
         ws[f'I{row + 2}'].alignment = self.total_cells_aligment
         list_difference_width = tuple(list_difference_width)
         # print(list_required_width)
-        self.create_bar_diagramm(tuple_differences = list_difference_width,
-                                 title = "Разница ширины проезжей части от требуемого значения по расстоянию",
-                                 calculation_object = [obj for key, value in self.data.get('весь участок') for obj in value.get(
-                                     'Ширина проезжей части').get('Ширина ПЧ')], page = 'Диаграммы')
+        self.create_bar_diagram(tuple_differences = list_difference_width,
+                                title = "Разница ширины проезжей части от требуемого значения по расстоянию",
+                                calculation_object = [obj for value in self.data.values() if isinstance(value, dict)
+                                                       for obj in value.get(
+                                         'Ширина проезжей части').get('Ширина ПЧ')],
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы')
 
-    def create_bar_diagramm (self, page = None, tuple_differences = None, title = None, calculation_object = None):
-
+    def create_bar_diagram (self, page = None, tuple_differences = None, title = None, calculation_object = None,
+                            pos_neg_all = None):
+        '''
+        создание столбчатой диаграммы
+        :param page: страница для диаграммы
+        :param tuple_differences: кортеж с разницей ширины
+        :param title: заголовок диаграммы
+        :param calculation_object: привязки к объектам
+        :param pos_neg_all: кортеж с количеством положительных и отрицательных и суммарно значений
+        :return:
+        '''
+        color = FontStyle(color = 'ffffff')
         ws = self.wb[page]
         row = 1
         ws.cell(row = row, column = 2, value = 'Соответствует')
+        ws.cell(row = row, column = 2).font = color
         ws.cell(row = row, column = 3, value = 'Не соответствует')
+        ws.cell(row = row, column = 3).font = color
         row += 1
-        pos = 0
-        neg = 0
 
-        for i, diff in zip(calculation_object, tuple_differences):
+        for calc_obj, diff in zip(calculation_object[1:], tuple_differences[:-1]):
+
+            ws.cell(row = row, column = 1, value = calc_obj[-3])
+            ws.cell(row = row, column = 1).font = color
             if abs(diff) <= 0.5:
-                # print('Соответствует',abs(diff))
-                ws.cell(row = row, column = 1, value = i[-3])
+
                 ws.cell(row = row, column = 2, value = diff)
+                ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = 0)
-                pos += abs(i[-3] - pos)
+                ws.cell(row = row, column = 3, value = 0).font = color
+
             else:
-                ws.cell(row = row, column = 1, value = i[-3])
+
                 ws.cell(row = row, column = 2, value = 0)
+                ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = diff)
-                neg += abs(i[-3] - neg)
+                ws.cell(row = row, column = 3).font = color
+
             row += 1
-        ws.cell(row = row, column = 2, value = pos)
-        ws.cell(row = row, column = 3, value = neg)
+
+        ws.cell(row = row, column = 1, value = pos_neg_all[2])
+        ws.cell(row = row, column = 1).font = color
+        if abs(tuple_differences[-1]) <= 0.5:
+            ws.cell(row = row, column = 2, value = tuple_differences[-1])
+            ws.cell(row = row, column = 2).font = color
+            ws.cell(row = row, column = 3, value = 0)
+            ws.cell(row = row, column = 3, value = 0).font = color
+        else:
+            ws.cell(row = row, column = 2, value = 0)
+            ws.cell(row = row, column = 2).font = color
+            ws.cell(row = row, column = 3, value = tuple_differences[-1])
+            ws.cell(row = row, column = 3).font = color
+
+        row += 1
+
+        ws.cell(row = row, column = 2, value = pos_neg_all[0])
+        ws.cell(row = row, column = 2).font = color
+        ws.cell(row = row, column = 3, value = pos_neg_all[1])
+        ws.cell(row = row, column = 3).font = color
         # ДИАГРАММА №1
         # создаем объект диаграммы
         chart = BarChart(gapWidth = 0, overlap = 100)
@@ -2022,6 +2060,8 @@ class WriterExcelDAD(WriterExcel):
     def write_shoulder_width (self):
         ws = self.wb['Ширина обочин']
         row = 9
+
+
         сompliant = 0
         noсompliant = 0
         length = 0
@@ -2050,9 +2090,13 @@ class WriterExcelDAD(WriterExcel):
                     ws.cell(row = row + 1, column = col).border = self.table_cells_border
                     ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
                     ws.cell(row = row + 1, column = col).font = self.table_cells_font
-                if idx == 0:
-                    past_direction = direction
-                    continue
+
+            ws[f'I{row}'] = f'Протяженность: {length} м'
+            ws[f'I{row}'].alignment = self.total_cells_aligment
+            ws[f'I{row + 1}'] = f'Соответствует: {positive_counter} м'
+            ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+            ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
+            ws[f'I{row + 2}'].alignment = self.total_cells_aligment
 
 
 class WriterApplication(WriterExcel):
