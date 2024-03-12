@@ -1655,9 +1655,9 @@ class WriterExcelDAD(WriterExcel):
         self.total_cells_aligment = Alignment(horizontal = 'right', vertical = 'center')
         # self.write_titular()
         # self.write_note()
-        self.write_roadway_width()
+        #self.write_roadway_width()
+        self.write_shoulder_width()
         self.save_file()
-        # self.write_shoulder_width()
 
     def set_chart_text_style (self, chart):
         '''изменяет расмер и стиль текста на диаграмме
@@ -1894,11 +1894,6 @@ class WriterExcelDAD(WriterExcel):
                 else:
                     ws[f'I{row}'] = 'Не соответствует'
                     negative_counter += abs(lenght_segment)
-                # last_width = width
-
-            # ws[f'C{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][0]  # конец км
-            # ws[f'D{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-1][1]  # конец м
-            # ws[f'E{row}'] = value.get('Ось дороги').get('Начало трассы')[0][-3] - last_width
 
         row += 2
 
@@ -1911,13 +1906,14 @@ class WriterExcelDAD(WriterExcel):
         list_difference_width = tuple(list_difference_width)
         # print(list_required_width)
         self.create_bar_diagram(tuple_differences = list_difference_width,
-                                title = "Разница ширины проезжей части от требуемого значения по расстоянию",
+                                title = ("Разница ширины проезжей части от требуемого значения по расстоянию",
+                                         'Общая оценка соответствия ширины проезжей части'),
                                 calculation_object = [obj for value in self.data.values() if isinstance(value, dict)
                                                        for obj in value.get(
                                          'Ширина проезжей части').get('Ширина ПЧ')],
                                 pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы')
 
-    def create_bar_diagram (self, page = None, tuple_differences = None, title = None, calculation_object = None,
+    def create_bar_diagram (self, page: str = None, tuple_differences = None, title: tuple[str, str] = None, calculation_object = None,
                             pos_neg_all = None):
         '''
         создание столбчатой диаграммы
@@ -1985,7 +1981,7 @@ class WriterExcelDAD(WriterExcel):
         # установим стиль диаграммы (цветовая схема)
         chart.style = 2
         # заголовок диаграммы
-        chart.title = title
+        chart.title = title[0]
         # подпись оси `y`
         chart.y_axis.title = 'Допустимый диапазон'
         # показывать данные на оси
@@ -2021,7 +2017,7 @@ class WriterExcelDAD(WriterExcel):
 
         # добавляем диаграмму на лист
         ws.add_chart(chart, 'A1')
-        self.create_pie_chart(ws, row, title = 'Общая оценка соответствия ширины проезжей части')
+        self.create_pie_chart(ws, row, title = title[1])
 
     def create_pie_chart (self, ws, row, title = None):
         # круговая диаграмма
@@ -2060,43 +2056,101 @@ class WriterExcelDAD(WriterExcel):
     def write_shoulder_width (self):
         ws = self.wb['Ширина обочин']
         row = 9
-
-
-        сompliant = 0
-        noсompliant = 0
+        positive_counter = 0
+        negative_counter = 0
         length = 0
-        list_required_width = []
+        list_difference_width = []
+        widths_all = []
         for key, value in self.data.items():
             if isinstance(value, str):
                 continue
-            shoulder_width = self.get_category(value.get('Ширина обочин').get('Ширина обочины'), value)
-            direction_shoulder_width = value.get('Ширина обочин').get('Направление')
-            required_width = self.DICT_NORMATIVE_VALUE.get(shoulder_width[0][0])[0] * shoulder_width[0][1]
-            list_required_width.append(shoulder_width[0][3] - required_width)
-            # ic(value.get('Ширина обочин').get('Ширина обочины'))
-            # ic(shoulder_width)
-            # ic(direction_shoulder_width)
-            # ic(required_width)
-            # ic(list_required_width)
+            w = value.get('Ширина обочин').get('Ширина обочины')
+            widths = []
+            direction = value.get('Ширина обочин').get('Направление')
+            for idx, width in enumerate(w):
+
+                #ic(direction_shoulder_width[idx])
+                if idx%2 == 0:
+                    if direction[idx][0] == 'Прямое':
+                        widths.append((float(width[0]), float(w[idx+1][0]), *width[1:]))
+                    else:
+                        widths.append((float(w[idx+1][0]), float(width[0]), *width[1:]))
+            one_width = widths.pop(0)
+            list_category = self.get_category(widths, value)
+            required_width = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[1]
+            difference_width = float(one_width[0]) - required_width
+            list_difference_width.append(difference_width)
+
             if len(self.data) > 2:
                 # ws.unmerge_cells(f'A{row}:I{row}')
                 ws.merge_cells(f'A{row}:K{row}')
                 ws[f'A{row}'] = key
-
                 row += 1
-            for idx, direction in enumerate(direction_shoulder_width):
+            ws[f'A{row}'] = 0  # roadway_width[0][-2][0]  # начало км
+            ws[f'B{row}'] = 0  # roadway_width[0][-2][1]  # начало м
+            ws[f'C{row}'] = widths[0][-1][0]  # конец км
+            ws[f'D{row}'] = widths[0][-1][1]  # конец м
+            ws[f'E{row}'] = widths[0][-4]  # протяженность
+            ws[f'F{row}'] = one_width[0]  # измеренная слева
+            ws[f'G{row}'] = one_width[1] # измеренная справо
+            ws[f'H{row}'] = min(one_width[:2]) #наименьшее
+            ws[f'I{row}'] = required_width #требуемое
+            ws[f'J{row}'] = difference_width  # разница
+            if abs(difference_width) <= 0.5:
+                ws[f'K{row}'] = 'Соответсвует'
+                positive_counter += abs(widths[0][-4])
+            else:
+                ws[f'K{row}'] = 'Не соответствует'
+                negative_counter += abs(widths[0][-4])
+            length = value.get('Ось дороги').get('Начало трассы')[0][2]
+            for idx, width in enumerate(widths):
 
                 for col in range(1, 12):
                     ws.cell(row = row + 1, column = col).border = self.table_cells_border
                     ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
                     ws.cell(row = row + 1, column = col).font = self.table_cells_font
 
-            ws[f'I{row}'] = f'Протяженность: {length} м'
-            ws[f'I{row}'].alignment = self.total_cells_aligment
-            ws[f'I{row + 1}'] = f'Соответствует: {positive_counter} м'
-            ws[f'I{row + 1}'].alignment = self.total_cells_aligment
-            ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
-            ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+                if idx != len(widths) - 1:
+                    last_width = widths[idx + 1]
+                else:
+                    last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
+
+
+                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[1]  #list_category[idx][1]  # Требуемая
+                difference_width = width[0] - required_width
+                list_difference_width.append(difference_width)
+                lenght_segment = last_width[-3] - width[-3]
+                row += 1
+                ws[f'A{row}'] = width[-2][0]
+                ws[f'B{row}'] = width[-2][1]
+                ws[f'C{row}'] = last_width[-1][0]
+                ws[f'D{row}'] = last_width[-1][1]
+                ws[f'E{row}'] = lenght_segment
+                ws[f'F{row}'] = width[0]  # измеренная слева
+                ws[f'G{row}'] = width[1] # измеренная справо
+                ws[f'H{row}'] = min(width[:2]) #наименьшее
+                ws[f'I{row}'] = required_width #требуемое
+                ws[f'J{row}'] = difference_width  # разница
+
+                if abs(difference_width) <= 0.5:
+                    ws[f'K{row}'] = 'Соответсвует'
+                    positive_counter += abs(lenght_segment)
+                else:
+                    ws[f'K{row}'] = 'Не соответствует'
+                    negative_counter += abs(lenght_segment)
+            widths_all.extend(widths)
+        row += 2
+        ws[f'K{row}'] = f'Протяженность: {length} м'
+        ws[f'K{row}'].alignment = self.total_cells_aligment
+        ws[f'K{row + 1}'] = f'Соответствует: {positive_counter} м'
+        ws[f'K{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'K{row + 2}'] = f'Не соответствует: {negative_counter} м'
+        ws[f'K{row + 2}'].alignment = self.total_cells_aligment
+        self.create_bar_diagram(tuple_differences = list_difference_width,
+                                title = ("Разница ширины обочины от требуемого значения по расстоянию",
+                                         "Общая оценка соответствия ширины обочины"),
+                                calculation_object = widths_all,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 1')
 
 
 class WriterApplication(WriterExcel):
