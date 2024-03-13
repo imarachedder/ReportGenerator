@@ -1608,15 +1608,15 @@ class WriterExcelTP(WriterExcel):
 
 
 class WriterExcelDAD(WriterExcel):
-    # 0Ширина полосы движения, м
-    # 1Ширина обочины, м
-    # 2Расчетная скорость, км / ч
-    # 3Наименьший радиус кривой в плане, м
-    # 4Наибольший продольный уклон, ‰
-    # 5Продольная ровность, м / км, не более
-    # 6Требуемый модуль упругости, Мпа, не менее
-    # 7Ширина укрепленной обочины
-
+    #key: категория дороги
+    #index:0 Ширина полосы движения, м
+    #index:1 Ширина обочины, м
+    #index:2 Расчетная скорость, км / ч
+    #index:3 Наименьший радиус кривой в плане, м
+    #index:4 Наибольший продольный уклон, ‰
+    #index:5 Продольная ровность, м / км, не более
+    #index:6 Требуемый модуль упругости, Мпа, не менее
+    #index:7 Ширина укрепленной обочины
     DICT_NORMATIVE_VALUE = {'IА': (3.75, 3.75, 150, 1200, 30, 4, 230, None),
                             'IБ': (3.75, 3.75, 120, 800, 40, 4, 230, None),
                             'IВ': (3.75, 3.5, 100, 600, 50, 4.5, 230, None),
@@ -1631,7 +1631,11 @@ class WriterExcelDAD(WriterExcel):
                             'VА': (4.5, 1.5, 50, 85, 70, 7.5, 100, None),
                             'VБ': (4.5, 1.5, 40, 50, 80, 7.5, None, None),
                             }
-    # 0Капитальный,1Облегченный,2Переходный,3Низший
+    # key: категория дороги
+    #index:0 Капитальный
+    #index:1 Облегченный
+    #index:2 Переходный
+    #index:3 Низший
     IRI = {
         'IА': (4, None, None, None),
         'IБ': (4, None, None, None),
@@ -1653,11 +1657,14 @@ class WriterExcelDAD(WriterExcel):
                          data_interface = data_interface)
         self.tip_doc = 'Диагностика'
         self.total_cells_aligment = Alignment(horizontal = 'right', vertical = 'center')
+        self.run()
+        self.save_file()
+    def run(self):
         # self.write_titular()
         # self.write_note()
-        #self.write_roadway_width()
-        self.write_shoulder_width()
-        self.save_file()
+        # self.write_roadway_width()
+        # self.write_shoulder_width()
+        self.write_curves()
 
     def set_chart_text_style (self, chart):
         '''изменяет расмер и стиль текста на диаграмме
@@ -1717,6 +1724,7 @@ class WriterExcelDAD(WriterExcel):
 
     def write_note (self):
         '''
+        TODO: проверить на работоспособность
         заполенение листа записка
         '''
 
@@ -1731,7 +1739,7 @@ class WriterExcelDAD(WriterExcel):
         for key, value in self.data.items():
             if isinstance(value, str):
                 continue
-            start, end = value.get('Ось дороги', {}).get('Начало трассы', [])[0][9:]
+            start, end = value.get('Ось дороги', {}).get('Начало трассы', [])[0][-2:]
             start_str, end_str = self.change_start_and_end_obj(start, end)
             if count_distr > 2:
                 ws[f'A{i}'] = f"Начало {key}: {start_str} км"
@@ -1741,8 +1749,8 @@ class WriterExcelDAD(WriterExcel):
                 ws['A14'] = f"Начало дороги: {start_str} км"
                 ws['A15'] = f"Конец дороги: {end_str} км"
             print(value.get('Граница участка дороги', {}))
-            tuple_cateregory = (value.get('Граница участка дороги', {}).get('категория а/д'))
-            tuple_coating = (value.get('Граница участка дороги', {}).get('вид покрытия'))
+            tuple_cateregory = (value.get('Граница участка дороги', {}).get('категория а/д'),)
+            tuple_coating = (value.get('Граница участка дороги', {}).get('вид покрытия'),)
 
             last_cat = tuple_cateregory[0]
             last_coating = tuple_coating[0]
@@ -1905,23 +1913,24 @@ class WriterExcelDAD(WriterExcel):
         ws[f'I{row + 2}'].alignment = self.total_cells_aligment
         list_difference_width = tuple(list_difference_width)
         # print(list_required_width)
-        self.create_bar_diagram(tuple_differences = list_difference_width,
+        self.create_bar_diagram(differences = list_difference_width[:-1],
                                 title = ("Разница ширины проезжей части от требуемого значения по расстоянию",
                                          'Общая оценка соответствия ширины проезжей части'),
                                 calculation_object = [obj for value in self.data.values() if isinstance(value, dict)
                                                        for obj in value.get(
-                                         'Ширина проезжей части').get('Ширина ПЧ')],
+                                         'Ширина проезжей части').get('Ширина ПЧ')][1:],
                                 pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы')
 
-    def create_bar_diagram (self, page: str = None, tuple_differences = None, title: tuple[str, str] = None, calculation_object = None,
-                            pos_neg_all = None):
+    def create_bar_diagram (self, page: str = None, differences = None, title: tuple[str, str] = None, calculation_object = None,
+                            pos_neg_all = None, required=None):
         '''
         создание столбчатой диаграммы
         :param page: страница для диаграммы
-        :param tuple_differences: кортеж с разницей ширины
+        :param differences: кортеж с разницей ширины
         :param title: заголовок диаграммы
         :param calculation_object: привязки к объектам
         :param pos_neg_all: кортеж с количеством положительных и отрицательных и суммарно значений
+        :param required: требуемое значение для сравнения
         :return:
         '''
         color = FontStyle(color = 'ffffff')
@@ -1933,19 +1942,17 @@ class WriterExcelDAD(WriterExcel):
         ws.cell(row = row, column = 3).font = color
         row += 1
 
-        for calc_obj, diff in zip(calculation_object[1:], tuple_differences[:-1]):
+        for calc_obj, diff in zip(calculation_object, differences):
 
             ws.cell(row = row, column = 1, value = calc_obj[-3])
             ws.cell(row = row, column = 1).font = color
-            if abs(diff) <= 0.5:
+            if abs(diff) <= 0.5 or (required is not None and abs(diff) >= required):
 
                 ws.cell(row = row, column = 2, value = diff)
                 ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = 0)
                 ws.cell(row = row, column = 3, value = 0).font = color
-
             else:
-
                 ws.cell(row = row, column = 2, value = 0)
                 ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = diff)
@@ -1955,15 +1962,15 @@ class WriterExcelDAD(WriterExcel):
 
         ws.cell(row = row, column = 1, value = pos_neg_all[2])
         ws.cell(row = row, column = 1).font = color
-        if abs(tuple_differences[-1]) <= 0.5:
-            ws.cell(row = row, column = 2, value = tuple_differences[-1])
+        if abs(differences[-1]) <= 0.5 or (required is not None and abs(diff) >= required):
+            ws.cell(row = row, column = 2, value = differences[-1])
             ws.cell(row = row, column = 2).font = color
             ws.cell(row = row, column = 3, value = 0)
             ws.cell(row = row, column = 3, value = 0).font = color
         else:
             ws.cell(row = row, column = 2, value = 0)
             ws.cell(row = row, column = 2).font = color
-            ws.cell(row = row, column = 3, value = tuple_differences[-1])
+            ws.cell(row = row, column = 3, value = differences[-1])
             ws.cell(row = row, column = 3).font = color
 
         row += 1
@@ -2070,7 +2077,7 @@ class WriterExcelDAD(WriterExcel):
             for idx, width in enumerate(w):
 
                 #ic(direction_shoulder_width[idx])
-                if idx%2 == 0:
+                if idx % 2 == 0:
                     if direction[idx][0] == 'Прямое':
                         widths.append((float(width[0]), float(w[idx+1][0]), *width[1:]))
                     else:
@@ -2115,7 +2122,6 @@ class WriterExcelDAD(WriterExcel):
                 else:
                     last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
 
-
                 required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[1]  #list_category[idx][1]  # Требуемая
                 difference_width = width[0] - required_width
                 list_difference_width.append(difference_width)
@@ -2146,12 +2152,66 @@ class WriterExcelDAD(WriterExcel):
         ws[f'K{row + 1}'].alignment = self.total_cells_aligment
         ws[f'K{row + 2}'] = f'Не соответствует: {negative_counter} м'
         ws[f'K{row + 2}'].alignment = self.total_cells_aligment
-        self.create_bar_diagram(tuple_differences = list_difference_width,
+        self.create_bar_diagram(differences = list_difference_width[:-1],
                                 title = ("Разница ширины обочины от требуемого значения по расстоянию",
                                          "Общая оценка соответствия ширины обочины"),
-                                calculation_object = widths_all,
+                                calculation_object = widths_all[1:],
                                 pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 1')
 
+    def write_curves(self):
+        ws = self.wb['Радиусы кривых в плане']
+        row = 7
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        curves_all_values = []
+        required_min_curve = 0
+        for key, value in self.data.items():
+            if isinstance(value, str):
+                continue
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+            curves = [curve for curve in value.get('Кривая', {}).get('R', []) if '.' in curve[0] and float(curve[0])!= 0 ]
+            list_category = self.get_category(curves, value)
+            required_min_curve = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[3]
+            required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[2]
+            for curve in curves:
+                for col in range(1, 9):
+                    ws.cell(row = row + 1, column = col).border = self.table_cells_border
+                    ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row + 1, column = col).font = self.table_cells_font
+                ws[f'A{row}'] = curve[-2][0]  # начало км
+                ws[f'B{row}'] = curve[-2][1]  # начало м
+                ws[f'C{row}'] = curve[-1][0]  # конец км
+                ws[f'D{row}'] = curve[-1][1]  # конец м
+                ws[f'E{row}'] = required_speed  # расчетная скорость
+                ws[f'F{row}'] = round(float(curve[0]),2)  # измеренный радиус
+                ws[f'G{row}'] = required_min_curve  # требуемый радиус
+                curves_all_values.append(curve)
+                if abs(float(curve[0])) >= required_min_curve:
+                    ws[f'H{row}'] = 'Соответсвует'
+                    positive_counter += 1
+                else:
+                    ws[f'H{row}'] = 'Не соответствует'
+                    negative_counter += 1
+                row+=1
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+        # row += 2
+        # ws[f'H{row}'] = f'Протяженность: {length} м'
+        # ws[f'H{row}'].alignment = self.total_cells_aligment
+        # ws[f'H{row + 1}'] = f'Соответствует: {positive_counter} м'
+        # ws[f'H{row + 1}'].alignment = self.total_cells_aligment
+        # ws[f'H{row + 2}'] = f'Не соответствует: {negative_counter} м'
+        # ws[f'H{row + 2}'].alignment = self.total_cells_aligment
+        self.create_bar_diagram(differences = [float(curve[0]) for curve in curves_all_values],
+                                title = ("Оценка соответствиявеличины радиусов кривых в плане по расстоянию",
+                                         "Общая оценка соответствия радиусов кривых в плане"),
+                                calculation_object = curves_all_values,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 2',
+                                required = required_min_curve)
 
 class WriterApplication(WriterExcel):
     def __init__ (self, data: dict = None, path: str = None, data_interface: dict = None):
