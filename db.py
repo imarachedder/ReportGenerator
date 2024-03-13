@@ -461,6 +461,7 @@ def convert_m_to_km (param: tuple, list_km: list[tuple]):
                 break
 
             else:
+                idx += 1
                 continue
         return (int(start_km), start_m), (int(end_km), end_m)
 
@@ -626,7 +627,7 @@ class Query:
         """
 
         request = """
-            select DISTINCT High.Description, Group_Description.Item_Name, Types_Description.Param_Name,
+            select  High.Description, Group_Description.Item_Name, Types_Description.Param_Name,
             Params.ValueParam, Attribute.L1, Attribute.L2
                     from Road inner join Way on Road.ID_Road = Way.ID_Road
                     inner join High on Way.ID_Way = High.ID_Way
@@ -637,24 +638,25 @@ class Query:
                     where Road.Name = ? and Group_Description.Item_Name in ( 'Ось дороги' ,
                                                   'Километровые знаки' ,
                                                   'Граница участка дороги',
-                                                  'Кривая' ,
-                                                  'Оценка ровности IRI',
+                                                  'Кривая'  )
+              """
+        '''
+        'Оценка ровности IRI',
                                                   'Глубина колеи' ,
                                                   'Ширина проезжей части'  ,
                                                   'Ширина земляного полотна',
                                                   'Ширина обочин',
                                                   'Оценка состояния покрытия (баллы)',
                                                   'Коэффициент сцепления',
-                                                  'Модуль упругости')
-              """
+                                                  'Модуль упругости'
+        '''
         res_km = self.get_km_sign_list(road_name)
         self.cursor.execute(request, road_name)
 
         res = {'название дороги': road_name}
         for i, param in enumerate(self.cursor.fetchall()):
             #icecream.ic(i, param)
-            tuple_km = tuple(
-                res_km.get(param[0], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', []))
+            tuple_km = res_km.get(param[0], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', [])
 
             if tuple_km:
                 km = convert_m_to_km(param, tuple_km)
@@ -693,12 +695,12 @@ def databases ():
 
 def main ():
     import time
-    db = Query('OMSK_REGION_2023')  # FKU_VOLGO_VYATSK_1 OMSK_REGION_2023 FKU_MOSKVA_NIGN_NOVGOROD_1
+    db = Query('OMSK_REGION_2024')
     list_roads = db.set_road_name()
-    print(list_roads)
+    print(list_roads, list_roads[5])
 
     start = time.time()  # точка отсчета времени
-    data_dad = db.get_dad_datas(list_roads[1])
+    data_dad = db.get_dad_datas(list_roads[5])
     #data_tp = db.get_tp_datas(list_roads[1])
 
     end = time.time() - start  # время работы программы
