@@ -1662,10 +1662,10 @@ class WriterExcelDAD(WriterExcel):
 
     def run(self):
         # self.write_titular()
-        # self.write_note()
+        self.write_note()
         # self.write_roadway_width()
         # self.write_shoulder_width()
-        self.write_curves()
+        #self.write_curves()
 
     def set_chart_text_style (self, chart):
         '''изменяет расмер и стиль текста на диаграмме
@@ -1728,7 +1728,7 @@ class WriterExcelDAD(WriterExcel):
 
     def write_note (self):
         '''
-        TODO: проверить на работоспособность
+        'категория дорог/улиц' или 'категория а/д'
         заполенение листа записка
         '''
 
@@ -1753,8 +1753,8 @@ class WriterExcelDAD(WriterExcel):
                 ws['A14'] = f"Начало дороги: {start_str} км"
                 ws['A15'] = f"Конец дороги: {end_str} км"
             print(value.get('Граница участка дороги', {}))
-            tuple_cateregory = (value.get('Граница участка дороги', {}).get('категория а/д'),)
-            tuple_coating = (value.get('Граница участка дороги', {}).get('вид покрытия'),)
+            tuple_cateregory = (*value.get('Граница участка дороги', {}).get('категория дорог/улиц'),)
+            tuple_coating = (*value.get('Граница участка дороги', {}).get('вид покрытия'),)
 
             last_cat = tuple_cateregory[0]
             last_coating = tuple_coating[0]
