@@ -10,7 +10,8 @@ from openpyxl.chart.label import DataLabelList
 from openpyxl.chart.marker import DataPoint
 from openpyxl.chart.text import RichText
 from openpyxl.drawing.image import Image
-from openpyxl.drawing.text import ParagraphProperties, CharacterProperties, Paragraph, Font as FontText
+from openpyxl.drawing.text import ParagraphProperties, CharacterProperties, Paragraph, Font as FontText, \
+    RichTextProperties
 from openpyxl.styles import Alignment, Side, Border, Font as FontStyle
 
 import db
@@ -31,7 +32,6 @@ class WriterExcel:
         self.data_interface = data_interface
         if data_interface is None:
             self.data_interface = {'tip_passport': 'city'}
-        # self.msg = QMessageBox()
         self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
@@ -1659,6 +1659,7 @@ class WriterExcelDAD(WriterExcel):
         self.total_cells_aligment = Alignment(horizontal = 'right', vertical = 'center')
         self.run()
         self.save_file()
+
     def run(self):
         # self.write_titular()
         # self.write_note()
@@ -1681,17 +1682,20 @@ class WriterExcelDAD(WriterExcel):
         pp_legend = ParagraphProperties(defRPr = cp_legend)
         pp_title = ParagraphProperties(defRPr = cp_title)
         pp_other = ParagraphProperties(defRPr = cp_other)
-        rt = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)])
-
+        rt_y = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)])
+        rt_x = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)],bodyPr = RichTextProperties(vert = 'vert270'))
         for para in chart.title.tx.rich.paragraphs:
             para.pPr = pp_title
         # задаем шрифт текста заголовка оси Y
         if isinstance(chart, BarChart):
             chart.y_axis.title.tx.rich.p[0].pPr = pp_other
-            chart.x_axis.txPr = rt
-            chart.y_axis.txPr = rt
+            chart.x_axis.txPr = rt_x
+            chart.y_axis.txPr = rt_y
+
+            chart.x_axis.txPr.properties.vert ='vert270'
         else:
             chart.dataLabels.txPr = RichText(p = [Paragraph(pPr = pp_title, endParaRPr = cp_title)])
+
         chart.legend.txPr = RichText(p = [Paragraph(pPr = pp_legend, endParaRPr = cp_legend)])
         chart.title.tx.rich.paragraphs[0].properties.rPr = pp_other
 
@@ -2174,11 +2178,12 @@ class WriterExcelDAD(WriterExcel):
                 ws.merge_cells(f'A{row}:K{row}')
                 ws[f'A{row}'] = key
                 row += 1
-            curves = [curve for curve in value.get('Кривая', {}).get('R', []) if '.' in curve[0] and float(curve[0])!= 0 ]
+            curves = [curve for curve in value.get('Кривая', {}).get('R', []) if '.' in curve[0] and float(curve[0])!= 0]
             list_category = self.get_category(curves, value)
-            required_min_curve = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[3]
-            required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[2]
-            for curve in curves:
+
+            for idx,curve in enumerate(curves):
+                required_min_curve = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[3]
+                required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[2]
                 for col in range(1, 9):
                     ws.cell(row = row + 1, column = col).border = self.table_cells_border
                     ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
@@ -2206,10 +2211,13 @@ class WriterExcelDAD(WriterExcel):
         # ws[f'H{row + 1}'].alignment = self.total_cells_aligment
         # ws[f'H{row + 2}'] = f'Не соответствует: {negative_counter} м'
         # ws[f'H{row + 2}'].alignment = self.total_cells_aligment
+        calc_obj = [(*curve[:-3],'\n'.join(self.change_start_and_end_obj(*curve[-2:])),*curve[-2:])for curve in curves_all_values ]
+
+
         self.create_bar_diagram(differences = [float(curve[0]) for curve in curves_all_values],
                                 title = ("Оценка соответствиявеличины радиусов кривых в плане по расстоянию",
                                          "Общая оценка соответствия радиусов кривых в плане"),
-                                calculation_object = curves_all_values,
+                                calculation_object = calc_obj,
                                 pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 2',
                                 required = required_min_curve)
 
