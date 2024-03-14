@@ -910,9 +910,9 @@ class WriterExcelTP(WriterExcel):
 
             # ограждения км
             sum_fencing = round(sum(float(x[1]) for k in
-                                    ['Нестандартное ограждение', 'Пешеходное ограждение', 'Тросовое ограждение',
+                                    ('Нестандартное ограждение', 'Пешеходное ограждение', 'Тросовое ограждение',
                                      'Типа Нью-Джерси', 'Металическое барьерное ограждение', 'Парапетное ограждение'
-                                     ] for x in
+                                     ) for x in
                                     v1.get(k, {}).get('Статус', [])) / 1000, 3)
             sum_total['Ограждения'] += sum_fencing
             ws[f"{column}28"] = sum_fencing if sum_fencing != 0 else '-'
@@ -1661,11 +1661,12 @@ class WriterExcelDAD(WriterExcel):
         self.save_file()
 
     def run(self):
-        # self.write_titular()
+        self.write_titular()
         self.write_note()
-        # self.write_roadway_width()
-        # self.write_shoulder_width()
-        #self.write_curves()
+        self.write_roadway_width()
+        self.write_shoulder_width()
+        self.write_curves()
+        self.write_longitudinal_slope()
 
     def set_chart_text_style (self, chart):
         '''изменяет расмер и стиль текста на диаграмме
@@ -1923,10 +1924,11 @@ class WriterExcelDAD(WriterExcel):
                                 calculation_object = [obj for value in self.data.values() if isinstance(value, dict)
                                                        for obj in value.get(
                                          'Ширина проезжей части').get('Ширина ПЧ')][1:],
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы')
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы',le=True,
+                                required=0.5)
 
     def create_bar_diagram (self, page: str = None, differences = None, title: tuple[str, str] = None, calculation_object = None,
-                            pos_neg_all = None, required=None):
+                            pos_neg_all = None, required=None,le=None,ge=None):
         '''
         создание столбчатой диаграммы
         :param page: страница для диаграммы
@@ -1935,6 +1937,8 @@ class WriterExcelDAD(WriterExcel):
         :param calculation_object: привязки к объектам
         :param pos_neg_all: кортеж с количеством положительных и отрицательных и суммарно значений
         :param required: требуемое значение для сравнения
+        :param le:  меньше или равно diff<=required
+        :param ge: больше или равно diff>=required
         :return:
         '''
         color = FontStyle(color = 'ffffff')
@@ -1950,7 +1954,8 @@ class WriterExcelDAD(WriterExcel):
 
             ws.cell(row = row, column = 1, value = calc_obj[-3])
             ws.cell(row = row, column = 1).font = color
-            if abs(diff) <= 0.5 or (required is not None and abs(diff) >= required):
+            if (le is not None and abs(diff) <= required) or (ge is not None and abs(diff) >= required):
+            #if abs(diff) <= 0.5 or (required is not None and abs(diff) >= required):
 
                 ws.cell(row = row, column = 2, value = diff)
                 ws.cell(row = row, column = 2).font = color
@@ -1966,16 +1971,16 @@ class WriterExcelDAD(WriterExcel):
 
         ws.cell(row = row, column = 1, value = pos_neg_all[2])
         ws.cell(row = row, column = 1).font = color
-        if abs(differences[-1]) <= 0.5 or (required is not None and abs(diff) >= required):
-            ws.cell(row = row, column = 2, value = differences[-1])
-            ws.cell(row = row, column = 2).font = color
-            ws.cell(row = row, column = 3, value = 0)
-            ws.cell(row = row, column = 3, value = 0).font = color
+        if (le is not None and abs(differences[-1]) <= required) or (ge is not None and abs(differences[-1]) >= required):
+           ws.cell(row = row, column = 2, value = differences[-1])
+           ws.cell(row = row, column = 2).font = color
+           ws.cell(row = row, column = 3, value = 0)
+           ws.cell(row = row, column = 3, value = 0).font = color
         else:
-            ws.cell(row = row, column = 2, value = 0)
-            ws.cell(row = row, column = 2).font = color
-            ws.cell(row = row, column = 3, value = differences[-1])
-            ws.cell(row = row, column = 3).font = color
+           ws.cell(row = row, column = 2, value = 0)
+           ws.cell(row = row, column = 2).font = color
+           ws.cell(row = row, column = 3, value = differences[-1])
+           ws.cell(row = row, column = 3).font = color
 
         row += 1
 
@@ -2160,7 +2165,8 @@ class WriterExcelDAD(WriterExcel):
                                 title = ("Разница ширины обочины от требуемого значения по расстоянию",
                                          "Общая оценка соответствия ширины обочины"),
                                 calculation_object = widths_all[1:],
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 1')
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 1',
+                                required = 0.5, le=True)
 
     def write_curves(self):
         ws = self.wb['Радиусы кривых в плане']
@@ -2185,9 +2191,9 @@ class WriterExcelDAD(WriterExcel):
                 required_min_curve = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[3]
                 required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[2]
                 for col in range(1, 9):
-                    ws.cell(row = row + 1, column = col).border = self.table_cells_border
-                    ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
-                    ws.cell(row = row + 1, column = col).font = self.table_cells_font
+                    ws.cell(row = row , column = col).border = self.table_cells_border
+                    ws.cell(row = row , column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row , column = col).font = self.table_cells_font
                 ws[f'A{row}'] = curve[-2][0]  # начало км
                 ws[f'B{row}'] = curve[-2][1]  # начало м
                 ws[f'C{row}'] = curve[-1][0]  # конец км
@@ -2204,22 +2210,74 @@ class WriterExcelDAD(WriterExcel):
                     negative_counter += 1
                 row+=1
                 length = value.get('Ось дороги').get('Начало трассы')[0][2]
-        # row += 2
-        # ws[f'H{row}'] = f'Протяженность: {length} м'
-        # ws[f'H{row}'].alignment = self.total_cells_aligment
-        # ws[f'H{row + 1}'] = f'Соответствует: {positive_counter} м'
-        # ws[f'H{row + 1}'].alignment = self.total_cells_aligment
-        # ws[f'H{row + 2}'] = f'Не соответствует: {negative_counter} м'
-        # ws[f'H{row + 2}'].alignment = self.total_cells_aligment
-        calc_obj = [(*curve[:-3],'\n'.join(self.change_start_and_end_obj(*curve[-2:])),*curve[-2:])for curve in curves_all_values ]
 
+        calc_obj = [(*curve[:-3],'\n'.join(self.change_start_and_end_obj(*curve[-2:])),*curve[-2:])for curve in curves_all_values ]
 
         self.create_bar_diagram(differences = [float(curve[0]) for curve in curves_all_values],
                                 title = ("Оценка соответствиявеличины радиусов кривых в плане по расстоянию",
                                          "Общая оценка соответствия радиусов кривых в плане"),
                                 calculation_object = calc_obj,
                                 pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 2',
-                                required = required_min_curve)
+                                required = required_min_curve,ge=True)
+
+    def write_longitudinal_slope(self):
+        ws = self.wb['Продольный уклон']
+        row = 8
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        slopes_all_values = []
+        required_max_slope=0
+        for key, value in self.data.items():
+            if isinstance(value, str):
+                continue
+            if len(self.data) > 2:
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+            slopes = value.get('Кривая', {}).get('Продольный уклон', [])
+            list_category = self.get_category(slopes, value)
+            for idx, slope in enumerate(slopes):
+                required_max_slope = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[4]
+                required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[2]
+                for col in range(1, 10):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                lenght_segment = slope[-3]-slope[-4]
+                ws[f'A{row}'] = slope[-2][0]  # начало км
+                ws[f'B{row}'] = slope[-2][1]  # начало м
+                ws[f'C{row}'] = slope[-1][0]  # конец км
+                ws[f'D{row}'] = slope[-1][1]  # конец м
+                ws[f'E{row}'] = lenght_segment #протяженность
+                ws[f'F{row}'] = required_speed  # расчетная скорость
+                ws[f'G{row}'] = round(float(slope[0]), 2)  # измеренный уклон
+                ws[f'H{row}'] = required_max_slope  # максимально допустимый уклон
+                if abs(float(slope[0])) <= required_max_slope:
+                    ws[f'I{row}'] = 'Соответсвует'
+                    positive_counter += lenght_segment
+                else:
+                    ws[f'I{row}'] = 'Не соответствует'
+                    negative_counter += lenght_segment
+                row += 1
+                slopes_all_values.append(slope)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+
+        calc_obj = [(*curve[:-3], '\n'.join(self.change_start_and_end_obj(*curve[-2:])), *curve[-2:]) for curve in
+                    slopes_all_values]
+        row += 2
+        ws[f'I{row}'] = f'Протяженность: {length} м'
+        ws[f'I{row}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 1}'] = f'Соответствует: {positive_counter} м'
+        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
+        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+        self.create_bar_diagram(differences =[float(slopes[0]) for slopes in slopes_all_values],
+                                title = ("Оценка соответствия величины продольного уклона по расстоянию",
+                                         "Общая оценка соответствия величины продольного уклона"),
+                                calculation_object = calc_obj,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 3',
+                                required = required_max_slope, le=True)
 
 class WriterApplication(WriterExcel):
     def __init__ (self, data: dict = None, path: str = None, data_interface: dict = None):
@@ -2233,7 +2291,7 @@ class WriterApplicationCityTP(WriterApplication):
         super().__init__(data = data, path = path, data_interface = data_interface)
 
         self.cells_font_result = FontStyle(name = 'Times New Roman', size = 12, bold = True)
-        self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
+        #self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         # thick = Side(border_style = "thick", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
