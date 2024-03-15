@@ -437,7 +437,7 @@ def convert_m_to_km (param: tuple, list_km: list[tuple]):
                 start_km = num_sign[0]
                 start_m = param[-2] - num_sign[-2]
                 break
-            elif param[-2] > list_km[-1][-2]:
+            elif param[-2] >= list_km[-1][-2]:
                 start_km = list_km[-1][0]
                 start_m = param[-2] - list_km[-1][-2]
                 break
@@ -455,7 +455,7 @@ def convert_m_to_km (param: tuple, list_km: list[tuple]):
                 end_km = num_sign[0]
                 end_m = param[-1] - num_sign[-1]
                 break
-            elif param[-1] > list_km[-1][-1]:
+            elif param[-1] >= list_km[-1][-1]:
                 end_km = list_km[-1][0]
                 end_m = param[-1] - list_km[-1][-1]
                 break
@@ -638,17 +638,20 @@ class Query:
                     where Road.Name = ? and Group_Description.Item_Name in ( 'Ось дороги' ,
                                                   'Километровые знаки' ,
                                                   'Граница участка дороги',
-                                                  'Кривая',
-                                                  'Оценка ровности IRI',
-                                                  'Глубина колеи' ,
-                                                  'Ширина проезжей части'  ,
-                                                  'Ширина земляного полотна',
-                                                  'Ширина обочин',
-                                                  'Оценка состояния покрытия (баллы)',
-                                                  'Коэффициент сцепления',
-                                                  'Модуль упругости')
+                                                  
+                                                  'Оценка ровности IRI'
+                                                  )
               """
-
+        '''
+        'Кривая',
+        'Глубина колеи' ,
+        'Ширина проезжей части'  ,
+        'Ширина земляного полотна',
+        'Ширина обочин',
+        'Оценка состояния покрытия (баллы)',
+        'Коэффициент сцепления',
+        'Модуль упругости'
+        '''
         res_km = self.get_km_sign_list(road_name)
         self.cursor.execute(request, road_name)
 
@@ -656,7 +659,8 @@ class Query:
         for i, param in enumerate(self.cursor.fetchall()):
             #icecream.ic(i, param)
             tuple_km = res_km.get(param[0], {}).get('Километровые знаки', {}).get('Значение в прямом направлении', [])
-
+            if param[-2]==13500:
+                pass
             if tuple_km:
                 km = convert_m_to_km(param, tuple_km)
             else:
