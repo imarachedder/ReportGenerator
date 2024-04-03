@@ -74,6 +74,18 @@ class WriterExcel:
             str_end_obj = f'{end_obj[0]}+{end_obj[1]}'
         return str_start_obj, str_end_obj
 
+    def invise_ws (self, list_name):
+        for name in list_name:
+            self.wb[name].sheet_state = 'hidden'
+        # ws.sheet_state = 'hidden'
+
+    def check_param_name_category (self, value):
+        param_name_category = 'категория дорог/улиц'
+        if value.get('Граница участка дороги', {}).get(param_name_category,None) is None:
+            param_name_category = 'категория а/д'
+
+        return param_name_category
+
 
 class WriterExcelTP(WriterExcel):
     def __init__ (self, data: dict = None, path = None, data_interface = None):
@@ -87,7 +99,6 @@ class WriterExcelTP(WriterExcel):
     def run (self):
         print("Начал работать")
         # print(self.data_interface)
-
         # # self.write_pereplet()
         print('титульный')
         self.write_titular()
@@ -231,9 +242,10 @@ class WriterExcelTP(WriterExcel):
             ws[f'J{i}'] = length_district
 
             ws[f'L{n}'] = f"от КМ {str_start} до КМ {str_end}"
+            param_name_category = self.check_param_name_category(value)
             try:
-                tuple_cateregory = value.get('Граница участка дороги', {}).get('категория а/д')
-            except KeyError as e:
+                tuple_cateregory = value.get('Граница участка дороги', {}).get(param_name_category, [])
+            except (KeyError, TypeError) as e:
                 tuple_cateregory = []
                 self.errors.write(
                     f'{self.tip_doc} 6 лист: Проверьте данные в объекте "Граница участка дороги" в поле категория А/Д\n')
@@ -618,64 +630,17 @@ class WriterExcelTP(WriterExcel):
                         else:
                             sum_res.update({tip: {material: val}})
 
-                row = 8
+                row = 7
                 for key, val in result.items():
                     # заполнение всех типов и видов покрытий
-                    ws[f'B{row - 1}'] = key
+                    ws[f'B{row}'] = key
+                    ws[f'B{row}'].font = FontStyle(name = 'Times New Roman', size = 12,bold=True)
+                    row += 1
                     for key_material, material in val.items():
                         ws[f'B{row}'] = key_material
                         ws[f'{column}{row}'] = material if material != 0 else '-'
                         row += 1
-                    row += 4
-                # ws[f'{column}{row}'] = result.get('Капитальный').get('Цементобетонные монолитные') if result.get(
-                #         'Капитальный').get('цементобетон') != 0 else '-'
-                # ws[f'{column}8'] = result.get('Капитальный').get('Цементобетонные монолитные') if result.get(
-                #     'Капитальный').get('цементобетон') != 0 else '-'
-                # ws[f'{column}9'] = result.get('Капитальный').get('ж/б плиты') if result.get('Капитальный').get(
-                #     'ж/б плиты') != 0 else ''
-                # ws[f'{column}10'] = result.get('Капитальный').get('цементобетон') if result.get(
-                #     'Капитальный').get('цементобетон') != 0 else '-'
-                # ws[f'{column}11'] = result.get('Капитальный').get('цементобетон') if result.get(
-                #     'Капитальный').get('цементобетон') != 0 else '-'
-                # ws[f'{column}12'] = result.get('Капитальный').get('цементобетон') if result.get(
-                #     'Капитальный').get('цементобетон') != 0 else '-'
-                # ws[f'{column}13'] = result.get('Капитальный').get('асфальтобетон') if result.get(
-                #     'Капитальный').get('асфальтобетон') != 0 else '-'
-                # ws[f'{column}14'] = result.get('Капитальный').get('щебень/гравий, обр.вяжущий') if result.get(
-                #     'Капитальный').get('щебень/гравий, обр.вяжущий') != 0 else '-'
-
-                # ОБЛЕГЧЕННЫЕ
-
-                # ws[f'{column}19'] = result.get('Облегченный').get('асфальтобетон') \
-                #     if result.get('Облегченный').get('асфальтобетон') != 0 else '-'
-                # ws[f'{column}20'] = result.get('Облегченный').get('органоминеральные') \
-                #     if result.get('Облегченный').get('органоминеральные') != 0 else '-'
-                # ws[f'{column}21'] = result.get('Облегченный').get('щебеночные (гравийные), обработанные вяжущим') \
-                #     if result.get('Облегченный').get('щебеночные (гравийные), обработанные вяжущим') != 0 else '-'
-
-                # ПЕРЕХОДНЫЕ
-
-                # ws[f'{column}26'] = result.get('Переходный').get('Щебеночно - гравийно - песчаные') + result.get(
-                #     'Переходный').get('щебень/гравий') \
-                #     if result.get('Переходный').get('Щебеночно - гравийно - песчаные') != 0 or result.get(
-                #     'Переходный').get('щебень/гравий') != 0 else '-'
-                # ws[f'{column}27'] = result.get('Переходный').get(
-                #     'Грунт и малопрочные каменные материалы, укрепленные вяжущим') \
-                #     if result.get('Переходный').get(
-                #     'Грунт и малопрочные каменные материалы, укрепленные вяжущим') != 0 else '-'
-                # ws[f'{column}28'] = result.get('Переходный').get(
-                #     'Грунт, укрепленный различными вяжущими и местными материалами') \
-                #     if result.get('Переходный').get(
-                #     'Грунт, укрепленный различными вяжущими и местными материалами') != 0 else '-'
-                # ws[f'{column}29'] = result.get('Переходный').get('Булыжный и колотый камень(мостовые)') \
-                #     if result.get('Переходный').get('Булыжный и колотый камень(мостовые)') != 0 else '-'
-
-                # НИЗШИЕ
-
-                # ws[f'{column}34'] = result.get('Низший').get('Грунт профилированный') \
-                #     if result.get('Низший').get('Грунт профилированный') != 0 else '-'
-                # ws[f'{column}35'] = result.get('Низший').get('грунт') \
-                #     if result.get('Низший').get('грунт') != 0 else '-'
+                    row += 3
 
             counter += 1
 
@@ -737,8 +702,9 @@ class WriterExcelTP(WriterExcel):
                 #                      'Объект "Кривая" не имеет R',
                 #                      QMessageBox.StandardButton.Ok,
                 #                      QMessageBox.StandardButton.NoButton)
+            param_name_category = self.check_param_name_category(v1)
             try:
-                categorys_road_list = v1.get('Граница участка дороги', {}).get('категория а/д', )
+                categorys_road_list = v1.get('Граница участка дороги', {}).get(param_name_category, [])
             except KeyError as e:
                 self.errors.write(
                     f'{self.tip_doc} 11 лист таблица 4.4 Объект "Граница участка дороги" не имеет категории а/д')
@@ -1608,34 +1574,38 @@ class WriterExcelTP(WriterExcel):
 
 
 class WriterExcelDAD(WriterExcel):
-    #key: категория дороги
-    #index:0 Ширина полосы движения, м
-    #index:1 Ширина обочины, м
-    #index:2 Расчетная скорость, км / ч
-    #index:3 Наименьший радиус кривой в плане, м
-    #index:4 Наибольший продольный уклон, ‰
-    #index:5 Продольная ровность, м / км, не более
-    #index:6 Требуемый модуль упругости, Мпа, не менее
-    #index:7 Ширина укрепленной обочины
-    DICT_NORMATIVE_VALUE = {'IА': (3.75, 3.75, 150, 1200, 30, 4, 230, None),
-                            'IБ': (3.75, 3.75, 120, 800, 40, 4, 230, None),
-                            'IВ': (3.75, 3.5, 100, 600, 50, 4.5, 230, None),
-                            'II': (3.75, 3.5, 120, 800, 40, 4.5, 220, 2),
-                            'III': (3.5, 2.5, 100, 600, 50, 5, 200, 1.5),
-                            'IV': (3, 2, 80, 300, 60, 6.5, 150, 1),
-                            'IVА-р': (3, 2, 80, 265, 60, 6.5, 200, 1),
-                            'IVБ-р': (3, 1.5, 60, 125, 70, 6.5, 200, 0.75),
-                            'IVА-п': (3, 2, 70, 185, 60, 6.5, 150, 0.75),
-                            'IVБ-п': (3, 2, 60, 125, 70, 6.5, 150, 0.75),
-                            'V': (4.5, 1.75, 60, 150, 70, 7.5, 100, None),
-                            'VА': (4.5, 1.5, 50, 85, 70, 7.5, 100, None),
-                            'VБ': (4.5, 1.5, 40, 50, 80, 7.5, None, None),
+    # key: категория дороги
+    # index:0 Ширина полосы движения, м
+    # index:1 Ширина обочины, м
+    # index:2 Расчетная скорость, км / ч
+    # index:3 Наименьший радиус кривой в плане, м
+    # index:4 Наибольший продольный уклон, ‰
+    # index:5 Продольная ровность, м / км, не более
+    # index:6 Наибольшая глубина колеи мм
+    # index:7 Модуль упругости, Мпа, не менее
+    # index:8 Ширина укрепленной обочины
+    # index:9 Ширина землянного полотна
+    # index:10 Коэффициент сцепления
+    DICT_NORMATIVE_VALUE = {'IА': (3.75, 3.75, 150, 1200, 30, 4, 20, 230, None, None, 0.3),
+                            'IБ': (3.75, 3.75, 120, 800, 40, 4, 20, 230, None, None, 0.3),
+                            'IВ': (3.75, 3.5, 100, 600, 50, 4.5, 20, 230, None, None, 0.3),
+                            'II': (3.75, 3.5, 120, 800, 40, 4.5, 25, 220, 2, None, 0.3),
+                            'III': (3.5, 2.5, 100, 600, 50, 5, 30, 200, 1.5, None, 0.3),
+                            'IV': (3, 2, 80, 300, 60, 6.5, 30, 150, 1, None, 0.3),
+                            'IVА-р': (3, 2, 80, 265, 60, 6.5, 30, 200, 1, None, 0.3),
+                            'IVБ-р': (3, 1.5, 60, 125, 70, 6.5, 30, 200, 0.75, None, 0.3),
+                            'IVА-п': (3, 2, 70, 185, 60, 6.5, 30, 150, 0.75, None, 0.3),
+                            'IVБ-п': (3, 2, 60, 125, 70, 6.5, 30, 150, 0.75, None, 0.3),
+                            'V': (4.5, 1.75, 60, 150, 70, 7.5, 30, 100, None, 8, 0.3),
+                            'VА': (4.5, 1.5, 50, 85, 70, 7.5, 30, 100, None, 8, 0.3),
+                            'VБ': (4.5, 1.5, 40, 50, 80, 7.5, 30, None, None, 8, 0.3),
                             }
     # key: категория дороги
-    #index:0 Капитальный
-    #index:1 Облегченный
-    #index:2 Переходный
-    #index:3 Низший
+    # index:0 Капитальный
+    # index:1 Облегченный
+    # index:2 Переходный
+    # index:3 Низший
+
     IRI = {
         'IА': (4, None, None, None),
         'IБ': (4, None, None, None),
@@ -1651,25 +1621,33 @@ class WriterExcelDAD(WriterExcel):
         'VА': (None, 7.5, 8, None),
         'VБ': (None, 7.5, 8, None)
     }
+    list_gaps = [100, 200, 500, 1000]
 
     def __init__ (self, data: dict = None, path = None, data_interface = None):
         super().__init__(data, path_template_excel = path_template_excel_dad, path = path,
                          data_interface = data_interface)
         self.tip_doc = 'Диагностика'
         self.total_cells_aligment = Alignment(horizontal = 'right', vertical = 'center')
+        self.data_pivot = {}
         self.run()
         self.save_file()
 
-    def run(self):
+    def run (self):
         self.write_titular()
         self.write_note()
         self.write_roadway_width()
         self.write_shoulder_width()
         self.write_curves()
         self.write_longitudinal_slope()
+        self.write_iri()
+        self.write_coley()
+        self.write_clutch()
+        self.write_toughness()
+        self.write_ball_defect()
+        #self.pivot_table()
 
     def set_chart_text_style (self, chart):
-        '''изменяет расмер и стиль текста на диаграмме
+        '''изменяет размер и стиль текста на диаграмме
 
         :param chart:  объект диаграмма
         :return:
@@ -1684,7 +1662,8 @@ class WriterExcelDAD(WriterExcel):
         pp_title = ParagraphProperties(defRPr = cp_title)
         pp_other = ParagraphProperties(defRPr = cp_other)
         rt_y = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)])
-        rt_x = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)],bodyPr = RichTextProperties(vert = 'vert270'))
+        rt_x = RichText(p = [Paragraph(pPr = pp_other, endParaRPr = cp_other)],
+                        bodyPr = RichTextProperties(vert = 'vert270'))
         for para in chart.title.tx.rich.paragraphs:
             para.pPr = pp_title
         # задаем шрифт текста заголовка оси Y
@@ -1693,7 +1672,7 @@ class WriterExcelDAD(WriterExcel):
             chart.x_axis.txPr = rt_x
             chart.y_axis.txPr = rt_y
 
-            chart.x_axis.txPr.properties.vert ='vert270'
+            chart.x_axis.txPr.properties.vert = 'vert270'
         else:
             chart.dataLabels.txPr = RichText(p = [Paragraph(pPr = pp_title, endParaRPr = cp_title)])
 
@@ -1753,9 +1732,10 @@ class WriterExcelDAD(WriterExcel):
             else:
                 ws['A14'] = f"Начало дороги: {start_str} км"
                 ws['A15'] = f"Конец дороги: {end_str} км"
-            print(value.get('Граница участка дороги', {}))
-            tuple_cateregory = (*value.get('Граница участка дороги', {}).get('категория дорог/улиц'),)
-            tuple_coating = (*value.get('Граница участка дороги', {}).get('вид покрытия'),)
+            # print(value.get('Граница участка дороги', {}))
+            param_name_category = self.check_param_name_category(value)
+            tuple_cateregory = (*value.get('Граница участка дороги', {}).get(param_name_category,[]),)
+            tuple_coating = (*value.get('Граница участка дороги', {}).get('тип дорожной одежды',[]),)
 
             last_cat = tuple_cateregory[0]
             last_coating = tuple_coating[0]
@@ -1773,6 +1753,7 @@ class WriterExcelDAD(WriterExcel):
                     ws.cell(row = row, column = col).border = self.table_cells_border
                     ws.cell(row = row, column = col).alignment = self.table_cells_aligment
                     ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
                 # объединяю ячейки
                 ws.merge_cells(f'E{row}:H{row}')
                 ws.merge_cells(f'I{row}:J{row}')
@@ -1807,128 +1788,37 @@ class WriterExcelDAD(WriterExcel):
                 last_cat = category
                 last_coating = tuple_coating[idx]
 
-    def get_category (self, list_width: list[tuple], value):
+    def get_category (self, list_object: list[tuple], value) -> list[tuple]:
         '''
-        объединяет и соотносит створы с категориями, количеством полос, видом покрытия
+        объединяет и соотносит объекты с категориями, количеством полос, видом покрытия по координатам
+        :param list_object: список объектов для которых нужно получить категорию
+        :param value: словарь с данными
+        return : список кортежей категорий, количество полос, тип дорожной одежды, координаты
         '''
+        obj_name = 'Граница участка дороги'
+        param_name_category = self.check_param_name_category(value)
+
         res = []
-        tuple_cat = tuple((category[0], float(count_line[0]), *tip_travel_clothing) for category,
-        count_line, tip_travel_clothing in zip(value.get('Граница участка дороги', {}).get('категория дорог/улиц'),
-                                               value.get('Граница участка дороги', {}).get('количество полос'),
-                                               value.get('Граница участка дороги', {}).get('тип дорожной одежды')))
-        for width in list_width:
+        tuple_cat = tuple((category[0], int(count_line[0]), *tip_travel_clothing) for category,
+        count_line, tip_travel_clothing in zip(value.get(obj_name, {}).get(param_name_category),
+                                               value.get(obj_name, {}).get('количество полос'),
+                                               value.get(obj_name, {}).get('тип дорожной одежды')))
+        for obj in list_object:
             for idx, category in enumerate(tuple_cat):
-                if width[-2] <= category[-2]:
+                if obj[-2] <= category[-2]:
                     res.append((*tuple_cat[idx - 1][0:3],))
                     break
-                elif width[-2] > tuple_cat[-1][-2]:
+                elif obj[-2] > tuple_cat[-1][-2]:
                     res.append((*tuple_cat[-1][0:3],))
                     break
-                elif width[-2] > category[-2]:
+                elif obj[-2] > category[-2]:
                     continue
         # print(list_cat)
         return res
 
-    def write_roadway_width (self):
-        row = 8
-        positive_counter = 0
-        negative_counter = 0
-        length = 0
-
-        list_difference_width = []
-        ws = self.wb['Ширина проезжей части']
-        for key, value in self.data.items():
-            if isinstance(value, str):
-                continue
-            one_width = value.get('Ширина проезжей части').get('Ширина ПЧ')[0]
-            tuple_roadway_width = tuple(
-                (float(i[0]), *i[1:]) for i in value.get('Ширина проезжей части').get('Ширина ПЧ')[1:])
-            list_category = self.get_category(tuple_roadway_width, value)
-            required_width = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[0] * list_category[0][1]
-            # list_required_width.append(roadway_width[0][3] - required_width)
-            difference_width = float(one_width[0]) - required_width
-            list_difference_width.append(difference_width)
-            if len(self.data) > 2:
-                # ws.unmerge_cells(f'A{row}:I{row}')
-                ws.merge_cells(f'A{row}:I{row}')
-                ws[f'A{row}'] = key
-                row += 1
-            ws[f'A{row}'] = 0  # roadway_width[0][-2][0]  # начало км
-            ws[f'B{row}'] = 0  # roadway_width[0][-2][1]  # начало м
-            ws[f'C{row}'] = tuple_roadway_width[0][-1][0]  # конец км
-            ws[f'D{row}'] = tuple_roadway_width[0][-1][1]  # конец м
-            ws[f'E{row}'] = tuple_roadway_width[0][-4]  # протяженность
-            ws[f'F{row}'] = one_width[0]  # измеренная
-            ws[f'G{row}'] = required_width
-
-            ws[f'H{row}'] = difference_width  # разница
-            if abs(difference_width) <= 0.5:
-                ws[f'I{row}'] = 'Соответсвует'
-                positive_counter += abs(tuple_roadway_width[0][-4])
-            else:
-                ws[f'I{row}'] = 'Не соответствует'
-                negative_counter += abs(tuple_roadway_width[0][-4])
-            length = value.get('Ось дороги').get('Начало трассы')[0][2]
-
-            for idx, width in enumerate(tuple_roadway_width):
-
-                for col in range(1, 10):
-                    ws.cell(row = row + 1, column = col).border = self.table_cells_border
-                    ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
-                    ws.cell(row = row + 1, column = col).font = self.table_cells_font
-                # if idx == 0:
-                #     last_width=0
-
-                if idx != len(tuple_roadway_width) - 1:
-                    last_width = tuple_roadway_width[idx + 1]
-                else:
-                    last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
-
-                    # ws[f'C{row}'] = width[-2][0]  # конец км
-                    # ws[f'D{row}'] = width[-2][1]  # конец м
-                    # ws[f'E{row}'] = width[-4] - last_width[-4]  # протяженность
-                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[0] * list_category[idx][
-                    1]  # Требуемая
-                difference_width = width[0] - required_width
-                list_difference_width.append(difference_width)
-                lenght_segment = last_width[-3] - width[-3]
-                row += 1
-                ws[f'A{row}'] = width[-2][0]
-                ws[f'B{row}'] = width[-2][1]
-                ws[f'C{row}'] = last_width[-1][0]
-                ws[f'D{row}'] = last_width[-1][1]
-                ws[f'E{row}'] = last_width[-3] - width[-3]  # протяженность
-                ws[f'F{row}'] = width[0]  # измеренная
-                ws[f'G{row}'] = required_width  # Требуемая
-                ws[f'H{row}'] = difference_width  # разница
-                if abs(difference_width) <= 0.5:
-                    ws[f'I{row}'] = 'Соответсвует'
-                    positive_counter += abs(lenght_segment)
-                else:
-                    ws[f'I{row}'] = 'Не соответствует'
-                    negative_counter += abs(lenght_segment)
-
-        row += 2
-
-        ws[f'I{row}'] = f'Протяженность: {length} м'
-        ws[f'I{row}'].alignment = self.total_cells_aligment
-        ws[f'I{row + 1}'] = f'Соответствует: {positive_counter} м'
-        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
-        ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
-        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
-        list_difference_width = tuple(list_difference_width)
-        # print(list_required_width)
-        self.create_bar_diagram(differences = list_difference_width[:-1],
-                                title = ("Разница ширины проезжей части от требуемого значения по расстоянию",
-                                         'Общая оценка соответствия ширины проезжей части'),
-                                calculation_object = [obj for value in self.data.values() if isinstance(value, dict)
-                                                       for obj in value.get(
-                                         'Ширина проезжей части').get('Ширина ПЧ')][1:],
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы',le=True,
-                                required=0.5)
-
-    def create_bar_diagram (self, page: str = None, differences = None, title: tuple[str, str] = None, calculation_object = None,
-                            pos_neg_all = None, required=None,le=None,ge=None):
+    def create_bar_diagram (self, page: str = None, differences = None, title: tuple[str, str] = None,
+                            calculation_object = None,
+                            pos_neg_all = None, required = None, le = None, ge = None, end_way = True):
         '''
         создание столбчатой диаграммы
         :param page: страница для диаграммы
@@ -1939,7 +1829,8 @@ class WriterExcelDAD(WriterExcel):
         :param required: требуемое значение для сравнения
         :param le:  меньше или равно diff<=required
         :param ge: больше или равно diff>=required
-        :return:
+        :param end_way: нужно ли добавлять в конец координату конца пути
+        :return: None
         '''
         color = FontStyle(color = 'ffffff')
         ws = self.wb[page]
@@ -1954,35 +1845,30 @@ class WriterExcelDAD(WriterExcel):
 
             ws.cell(row = row, column = 1, value = calc_obj[-3])
             ws.cell(row = row, column = 1).font = color
-            if (le is not None and abs(diff) <= required) or (ge is not None and abs(diff) >= required):
-            #if abs(diff) <= 0.5 or (required is not None and abs(diff) >= required):
-
+            if (le is not None and diff <= required) or (ge is not None and diff >= required):
                 ws.cell(row = row, column = 2, value = diff)
-                ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = 0)
-                ws.cell(row = row, column = 3, value = 0).font = color
             else:
                 ws.cell(row = row, column = 2, value = 0)
-                ws.cell(row = row, column = 2).font = color
                 ws.cell(row = row, column = 3, value = diff)
-                ws.cell(row = row, column = 3).font = color
+            ws.cell(row = row, column = 2).font = color
+            ws.cell(row = row, column = 3).font = color
 
             row += 1
+        if end_way:
+            ws.cell(row = row, column = 1, value = pos_neg_all[2])
+            ws.cell(row = row, column = 1).font = color
+            if (le is not None and abs(differences[-1]) <= required) or (
+                    ge is not None and abs(differences[-1]) >= required):
+                ws.cell(row = row, column = 2, value = differences[-1])
+                ws.cell(row = row, column = 3, value = 0)
+            else:
+                ws.cell(row = row, column = 2, value = 0)
+                ws.cell(row = row, column = 3, value = differences[-1])
+            ws.cell(row = row, column = 2).font = color
+            ws.cell(row = row, column = 3).font = color
 
-        ws.cell(row = row, column = 1, value = pos_neg_all[2])
-        ws.cell(row = row, column = 1).font = color
-        if (le is not None and abs(differences[-1]) <= required) or (ge is not None and abs(differences[-1]) >= required):
-           ws.cell(row = row, column = 2, value = differences[-1])
-           ws.cell(row = row, column = 2).font = color
-           ws.cell(row = row, column = 3, value = 0)
-           ws.cell(row = row, column = 3, value = 0).font = color
-        else:
-           ws.cell(row = row, column = 2, value = 0)
-           ws.cell(row = row, column = 2).font = color
-           ws.cell(row = row, column = 3, value = differences[-1])
-           ws.cell(row = row, column = 3).font = color
-
-        row += 1
+            row += 1
 
         ws.cell(row = row, column = 2, value = pos_neg_all[0])
         ws.cell(row = row, column = 2).font = color
@@ -2004,6 +1890,7 @@ class WriterExcelDAD(WriterExcel):
         chart.y_axis.delete = False
         # подпись оси `x`
         chart.x_axis.delete = False
+        chart.x_axis.tickLblPos = "low"
         # выберем 2 столбца с данными для оси `y`
         y = Reference(ws, min_col = 2, max_col = 3, min_row = 1, max_row = row - 1)
         # выберем категорию для оси `x`
@@ -2036,7 +1923,13 @@ class WriterExcelDAD(WriterExcel):
         self.create_pie_chart(ws, row, title = title[1])
 
     def create_pie_chart (self, ws, row, title = None):
-        # круговая диаграмма
+        """
+        создание круговой диаграммы
+        param ws: лист на котором создаем диаграмму
+        param row: строка для заполнения данных диаграммы
+        param title: название диаграммы
+        return: None
+        """
         chart_pie = PieChart()
         chart_pie.type = "bar"
         chart_pie.grouping = "stacked"
@@ -2069,32 +1962,174 @@ class WriterExcelDAD(WriterExcel):
         ws.add_chart(chart_pie, 'A20')
         self.set_chart_text_style(chart_pie)
 
+    def is_empty_obj (self, obj):
+        """
+        проверка на пустой объект
+        return: True если пустой False если нет
+        """
+        return True if obj is None else False
+
+    def is_str (self, obj):
+        """
+        проверка является объект строкой
+        """
+        return isinstance(obj, str)
+
+    def write_roadway_width (self):
+        """
+        запись ширины проезжей части
+        return: None
+        """
+        row = 8
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        name_obj = 'Ширина проезжей части'
+        name_obj_param = 'Ширина ПЧ'
+        name_ws_diagram = 'Диаграммы'
+        list_difference_width = []
+        check=None
+        ws = self.wb['Ширина проезжей части']
+        self.data_pivot['ширина проезжей части'] = []
+        for key, value in self.data.items():
+            idx_reqired_val = 0
+            if self.is_str(value):
+                continue
+            # не всегда может быть ширина проезжей части тогда нужно брать ширину землянного полотна
+            elif self.is_empty_obj(value.get(name_obj, None)):
+                name_obj = 'Ширина земляного полотна'
+                name_obj_param = 'Ширина'
+                idx_reqired_val = -1
+                if self.is_empty_obj(value.get(name_obj, None)):
+                    self.invise_ws(('Ширина проезжей части', name_ws_diagram))
+                    # self.invise_ws(self.wb[name_ws_diagram])
+                    return
+            one_width = value.get(name_obj, {}).get(name_obj_param, [])[0]
+            tuple_roadway_width = tuple(
+                (round(float(i[0]), 2), *i[1:]) for i in value.get(name_obj).get(name_obj_param)[1:])
+            list_category = self.get_category(tuple_roadway_width, value)
+            required_width = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[idx_reqired_val] * list_category[0][1]
+            # list_required_width.append(roadway_width[0][3] - required_width)
+            difference_width = round(float(one_width[0]) - required_width, 2)
+            list_difference_width.append(difference_width)
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:I{row}')
+                ws[f'A{row}'] = key
+                row += 1
+            ws[f'A{row}'] = 0  # roadway_width[0][-2][0]  # начало км
+            ws[f'B{row}'] = 0  # roadway_width[0][-2][1]  # начало м
+            ws[f'C{row}'] = tuple_roadway_width[0][-1][0]  # конец км
+            ws[f'D{row}'] = tuple_roadway_width[0][-1][1]  # конец м
+            ws[f'E{row}'] = tuple_roadway_width[0][-4]  # протяженность
+            ws[f'F{row}'] = round(float(one_width[0]), 2)  # измеренная
+            ws[f'G{row}'] = required_width
+            ws[f'H{row}'] = difference_width  # разница
+            if difference_width >= -0.5:
+                check ='Соответсвует'
+                #ws[f'I{row}'] = 'Соответсвует'
+                positive_counter += abs(tuple_roadway_width[0][-4])
+                self.data_pivot['ширина проезжей части'].append(check)
+            else:
+                check = 'Не соответствует'
+                #ws[f'I{row}'] = 'Не соответствует'
+                negative_counter += abs(tuple_roadway_width[0][-4])
+                self.data_pivot['ширина проезжей части'].append(check)
+            ws[f'I{row}'] = check
+            length = value.get('Ось дороги').get('Начало трассы')[0][2]
+
+            for idx, width in enumerate(tuple_roadway_width):
+
+                for col in range(1, 10):
+                    ws.cell(row = row + 1, column = col).border = self.table_cells_border
+                    ws.cell(row = row + 1, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row + 1, column = col).font = self.table_cells_font
+
+                if idx != len(tuple_roadway_width) - 1:
+                    last_width = tuple_roadway_width[idx + 1]
+                else:
+                    last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
+
+                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[idx_reqired_val] * \
+                                 list_category[idx][
+                                     1]  # Требуемая
+                difference_width = round(width[0] - required_width, 2)
+                list_difference_width.append(difference_width)
+                lenght_segment = last_width[-3] - width[-3]
+                row += 1
+                ws[f'A{row}'] = width[-2][0]
+                ws[f'B{row}'] = width[-2][1]
+                ws[f'C{row}'] = last_width[-1][0]
+                ws[f'D{row}'] = last_width[-1][1]
+                ws[f'E{row}'] = last_width[-3] - width[-3]  # протяженность
+                ws[f'F{row}'] = width[0]  # измеренная
+                ws[f'G{row}'] = required_width  # Требуемая
+                ws[f'H{row}'] = difference_width  # разница
+                if difference_width >= -0.5:
+                    #ws[f'I{row}'] = 'Соответсвует'
+                    check = 'Соответсвует'
+                    positive_counter += abs(lenght_segment)
+                else:
+                    #ws[f'I{row}'] = 'Не соответствует'
+                    check = 'Не соответствует'
+                    negative_counter += abs(lenght_segment)
+                self.data_pivot['ширина проезжей части'].append(check)
+                ws[f'I{row}'] = check
+
+        row += 2
+
+        ws[f'I{row}'] = f'Протяженность: {length} м'
+        ws[f'I{row}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 1}'] = f'Соответствует: {positive_counter} м'
+        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
+        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+        list_difference_width = tuple(list_difference_width)
+        # print(list_required_width)[:-1] [1:]
+        calc_obj = [obj for value in self.data.values() if isinstance(value, dict)
+                    for obj in value.get(
+                name_obj).get(name_obj_param)][1:]
+        self.create_bar_diagram(differences = list_difference_width,
+                                title = ("Разница ширины проезжей части от требуемого значения по расстоянию",
+                                         'Общая оценка соответствия ширины проезжей части'),
+                                calculation_object = calc_obj,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                le = True,
+                                required = -0.5, ge = True)
+
     def write_shoulder_width (self):
         ws = self.wb['Ширина обочин']
-        row = 9
+        name_ws_diagram = 'Диаграммы 1'
+        row = 8
         positive_counter = 0
         negative_counter = 0
         length = 0
         list_difference_width = []
         widths_all = []
+        check = None
+        self.data_pivot['ширина обочины'] = []
         for key, value in self.data.items():
-            if isinstance(value, str):
+            if self.is_str(value):
                 continue
+            elif self.is_empty_obj(value.get('Ширина обочин', None)):
+                self.invise_ws(('Ширина обочин', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
             w = value.get('Ширина обочин').get('Ширина обочины')
             widths = []
             direction = value.get('Ширина обочин').get('Направление')
             for idx, width in enumerate(w):
 
-                #ic(direction_shoulder_width[idx])
+                # ic(direction_shoulder_width[idx])
                 if idx % 2 == 0:
                     if direction[idx][0] == 'Прямое':
-                        widths.append((float(width[0]), float(w[idx+1][0]), *width[1:]))
+                        widths.append((float(width[0]), float(w[idx + 1][0]), *width[1:]))
                     else:
-                        widths.append((float(w[idx+1][0]), float(width[0]), *width[1:]))
+                        widths.append((float(w[idx + 1][0]), float(width[0]), *width[1:]))
             one_width = widths.pop(0)
             list_category = self.get_category(widths, value)
             required_width = self.DICT_NORMATIVE_VALUE.get(list_category[0][0])[1]
-            difference_width = float(one_width[0]) - required_width
+            difference_width = round(float(one_width[0]) - required_width, 2)
             list_difference_width.append(difference_width)
 
             if len(self.data) > 2:
@@ -2107,17 +2142,19 @@ class WriterExcelDAD(WriterExcel):
             ws[f'C{row}'] = widths[0][-1][0]  # конец км
             ws[f'D{row}'] = widths[0][-1][1]  # конец м
             ws[f'E{row}'] = widths[0][-4]  # протяженность
-            ws[f'F{row}'] = one_width[0]  # измеренная слева
-            ws[f'G{row}'] = one_width[1] # измеренная справо
-            ws[f'H{row}'] = min(one_width[:2]) #наименьшее
-            ws[f'I{row}'] = required_width #требуемое
+            ws[f'F{row}'] = round(one_width[1], 2)  # измеренная слева
+            ws[f'G{row}'] = round(one_width[0], 2)  # измеренная справо
+            ws[f'H{row}'] = round(min(one_width[:2]), 2)  # наименьшее
+            ws[f'I{row}'] = required_width  # требуемое
             ws[f'J{row}'] = difference_width  # разница
-            if abs(difference_width) <= 0.5:
-                ws[f'K{row}'] = 'Соответсвует'
+            if difference_width >= -0.5:
+                check = 'Соответсвует'
                 positive_counter += abs(widths[0][-4])
             else:
-                ws[f'K{row}'] = 'Не соответствует'
+                check = 'Не соответствует'
                 negative_counter += abs(widths[0][-4])
+            self.data_pivot['ширина обочины'].append(check)
+            ws[f'K{row}'] = check
             length = value.get('Ось дороги').get('Начало трассы')[0][2]
             for idx, width in enumerate(widths):
 
@@ -2131,28 +2168,35 @@ class WriterExcelDAD(WriterExcel):
                 else:
                     last_width = (width[0], *value.get('Ось дороги').get('Начало трассы')[0])
 
-                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[1]  #list_category[idx][1]  # Требуемая
-                difference_width = width[0] - required_width
+                required_width = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[1]  # Требуемая
+                difference_width = round(min(width[:2]) - required_width, 2)
                 list_difference_width.append(difference_width)
                 lenght_segment = last_width[-3] - width[-3]
                 row += 1
+                # if idx ==0:
+                #     ws[f'A{row}'] = 0
+                #     ws[f'B{row}'] = 0
+                #
+                # else:
                 ws[f'A{row}'] = width[-2][0]
                 ws[f'B{row}'] = width[-2][1]
                 ws[f'C{row}'] = last_width[-1][0]
                 ws[f'D{row}'] = last_width[-1][1]
                 ws[f'E{row}'] = lenght_segment
-                ws[f'F{row}'] = width[0]  # измеренная слева
-                ws[f'G{row}'] = width[1] # измеренная справо
-                ws[f'H{row}'] = min(width[:2]) #наименьшее
-                ws[f'I{row}'] = required_width #требуемое
+                ws[f'F{row}'] = width[1]  # измеренная слева
+                ws[f'G{row}'] = width[0]  # измеренная справо
+                ws[f'H{row}'] = min(width[:2])  # наименьшее
+                ws[f'I{row}'] = required_width  # требуемое
                 ws[f'J{row}'] = difference_width  # разница
 
-                if abs(difference_width) <= 0.5:
-                    ws[f'K{row}'] = 'Соответсвует'
+                if difference_width >= -0.5:
+                    check = 'Соответсвует'
                     positive_counter += abs(lenght_segment)
                 else:
-                    ws[f'K{row}'] = 'Не соответствует'
+                    check = 'Не соответствует'
                     negative_counter += abs(lenght_segment)
+                self.data_pivot['ширина обочины'].append(check)
+                ws[f'K{row}'] = check
             widths_all.extend(widths)
         row += 2
         ws[f'K{row}'] = f'Протяженность: {length} м'
@@ -2161,45 +2205,52 @@ class WriterExcelDAD(WriterExcel):
         ws[f'K{row + 1}'].alignment = self.total_cells_aligment
         ws[f'K{row + 2}'] = f'Не соответствует: {negative_counter} м'
         ws[f'K{row + 2}'].alignment = self.total_cells_aligment
-        self.create_bar_diagram(differences = list_difference_width[:-1],
+        self.create_bar_diagram(differences = list_difference_width,
                                 title = ("Разница ширины обочины от требуемого значения по расстоянию",
                                          "Общая оценка соответствия ширины обочины"),
                                 calculation_object = widths_all[1:],
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 1',
-                                required = 0.5, le=True)
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                required = -0.5, ge = True, end_way = False)
 
-    def write_curves(self):
+    def write_curves (self):
         ws = self.wb['Радиусы кривых в плане']
         row = 7
         positive_counter = 0
         negative_counter = 0
         length = 0
+        name_ws_diagram = 'Диаграммы 2'
         curves_all_values = []
         required_min_curve = 0
         for key, value in self.data.items():
-            if isinstance(value, str):
+            if self.is_str(value):
                 continue
+            elif self.is_empty_obj(value.get('Кривая', None)):
+                self.invise_ws(('Радиусы кривых в плане', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+
             if len(self.data) > 2:
-                # ws.unmerge_cells(f'A{row}:I{row}')
                 ws.merge_cells(f'A{row}:K{row}')
                 ws[f'A{row}'] = key
                 row += 1
-            curves = [curve for curve in value.get('Кривая', {}).get('R', []) if '.' in curve[0] and float(curve[0])!= 0]
+            curves = [curve for curve in value.get('Кривая', {}).get('R', []) if
+                      '.' in curve[0] and float(curve[0]) != 0]
             list_category = self.get_category(curves, value)
 
-            for idx,curve in enumerate(curves):
+            for idx, curve in enumerate(curves):
                 required_min_curve = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[3]
                 required_speed = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[2]
                 for col in range(1, 9):
-                    ws.cell(row = row , column = col).border = self.table_cells_border
-                    ws.cell(row = row , column = col).alignment = self.table_cells_aligment
-                    ws.cell(row = row , column = col).font = self.table_cells_font
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
                 ws[f'A{row}'] = curve[-2][0]  # начало км
                 ws[f'B{row}'] = curve[-2][1]  # начало м
                 ws[f'C{row}'] = curve[-1][0]  # конец км
                 ws[f'D{row}'] = curve[-1][1]  # конец м
                 ws[f'E{row}'] = required_speed  # расчетная скорость
-                ws[f'F{row}'] = round(float(curve[0]),2)  # измеренный радиус
+                ws[f'F{row}'] = round(abs(float(curve[0])), 0)  # измеренный радиус
                 ws[f'G{row}'] = required_min_curve  # требуемый радиус
                 curves_all_values.append(curve)
                 if abs(float(curve[0])) >= required_min_curve:
@@ -2208,29 +2259,35 @@ class WriterExcelDAD(WriterExcel):
                 else:
                     ws[f'H{row}'] = 'Не соответствует'
                     negative_counter += 1
-                row+=1
+                row += 1
                 length = value.get('Ось дороги').get('Начало трассы')[0][2]
 
-        calc_obj = [(*curve[:-3],'\n'.join(self.change_start_and_end_obj(*curve[-2:])),*curve[-2:])for curve in curves_all_values ]
+        calc_obj = [(*curve[:-3], '\n'.join(self.change_start_and_end_obj(*curve[-2:])), *curve[-2:]) for curve in
+                    curves_all_values]
 
-        self.create_bar_diagram(differences = [float(curve[0]) for curve in curves_all_values],
-                                title = ("Оценка соответствиявеличины радиусов кривых в плане по расстоянию",
+        self.create_bar_diagram(differences = [round(abs(float(curve[0])), 0) for curve in curves_all_values],
+                                title = ("Оценка соответствия величины радиусов кривых в плане по расстоянию",
                                          "Общая оценка соответствия радиусов кривых в плане"),
                                 calculation_object = calc_obj,
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 2',
-                                required = required_min_curve,ge=True)
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                required = required_min_curve, ge = True, end_way = False)
 
-    def write_longitudinal_slope(self):
+    def write_longitudinal_slope (self):
         ws = self.wb['Продольный уклон']
         row = 8
         positive_counter = 0
         negative_counter = 0
         length = 0
+        name_ws_diagram = 'Диаграммы 3'
         slopes_all_values = []
-        required_max_slope=0
+        required_max_slope = 0
         for key, value in self.data.items():
-            if isinstance(value, str):
+            if self.is_str(value):
                 continue
+            elif self.is_empty_obj(value.get('Кривая', None)):
+                self.invise_ws(('Продольный уклон', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
             if len(self.data) > 2:
                 ws.merge_cells(f'A{row}:K{row}')
                 ws[f'A{row}'] = key
@@ -2244,14 +2301,15 @@ class WriterExcelDAD(WriterExcel):
                     ws.cell(row = row, column = col).border = self.table_cells_border
                     ws.cell(row = row, column = col).alignment = self.table_cells_aligment
                     ws.cell(row = row, column = col).font = self.table_cells_font
-                lenght_segment = slope[-3]-slope[-4]
+                    ws.row_dimensions[row].height = None
+                lenght_segment = slope[-3] - slope[-4]
                 ws[f'A{row}'] = slope[-2][0]  # начало км
                 ws[f'B{row}'] = slope[-2][1]  # начало м
                 ws[f'C{row}'] = slope[-1][0]  # конец км
                 ws[f'D{row}'] = slope[-1][1]  # конец м
-                ws[f'E{row}'] = lenght_segment #протяженность
+                ws[f'E{row}'] = lenght_segment  # протяженность
                 ws[f'F{row}'] = required_speed  # расчетная скорость
-                ws[f'G{row}'] = round(float(slope[0]), 2)  # измеренный уклон
+                ws[f'G{row}'] = round(float(slope[0]), 0)  # измеренный уклон
                 ws[f'H{row}'] = required_max_slope  # максимально допустимый уклон
                 if abs(float(slope[0])) <= required_max_slope:
                     ws[f'I{row}'] = 'Соответсвует'
@@ -2263,8 +2321,8 @@ class WriterExcelDAD(WriterExcel):
                 slopes_all_values.append(slope)
                 length = value.get('Ось дороги').get('Начало трассы')[0][2]
 
-        calc_obj = [(*curve[:-3], '\n'.join(self.change_start_and_end_obj(*curve[-2:])), *curve[-2:]) for curve in
-                    slopes_all_values]
+        calc_obj = tuple([(*curve[:-3], '-'.join(self.change_start_and_end_obj(*curve[-2:])), *curve[-2:]) for curve in
+                          slopes_all_values])
         row += 2
         ws[f'I{row}'] = f'Протяженность: {length} м'
         ws[f'I{row}'].alignment = self.total_cells_aligment
@@ -2272,12 +2330,568 @@ class WriterExcelDAD(WriterExcel):
         ws[f'I{row + 1}'].alignment = self.total_cells_aligment
         ws[f'I{row + 2}'] = f'Не соответствует: {negative_counter} м'
         ws[f'I{row + 2}'].alignment = self.total_cells_aligment
-        self.create_bar_diagram(differences =[float(slopes[0]) for slopes in slopes_all_values],
+        self.create_bar_diagram(differences = tuple([round(float(slopes[0]), 0) for slopes in slopes_all_values]),
                                 title = ("Оценка соответствия величины продольного уклона по расстоянию",
                                          "Общая оценка соответствия величины продольного уклона"),
                                 calculation_object = calc_obj,
-                                pos_neg_all = (positive_counter, negative_counter, length), page = 'Диаграммы 3',
-                                required = required_max_slope, le=True)
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                required = required_max_slope, le = True, end_way = False)
+
+    def write_iri (self):
+        ws = self.wb['Продольная ровность']
+        row = 10
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        name_ws_diagram = 'Диаграммы 5'
+        iri_all = []
+        iri_max_vals = []
+        required_max_iri = 0
+        column_directly = [None, 'G', 'H', 'I', 'J', 'K', 'L']
+        column_back = [None, 'M', 'N', 'O', 'P', 'Q', 'R']
+        direction = ('Прямое', 'Обратное')
+        check = None
+        self.data_pivot['ровность'] = []
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            elif self.is_empty_obj(value.get('Оценка ровности IRI', None)):
+                self.invise_ws(('Продольная ровность', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+            iries = []
+
+            for idx, val in enumerate(value.get('Оценка ровности IRI', {}).get('Значение', [])):
+                if any([abs(val[2]) - abs(val[1]) >= x for x in self.list_gaps]) or val[-4] == 0 and 0 < val[-3] <= 100:
+                    iries.append(
+                        (float(val[0]), value.get('Оценка ровности IRI', {}).get('Направление движения', [])[idx][0],
+                         int(value.get('Оценка ровности IRI', {}).get('Полоса движения', [])[idx][0]),
+                         *val[1:]))
+                    # direction_iri.append(value.get('Оценка ровности IRI', {}).get('Направление движения', [])[idx])
+            if iries == []:
+                self.invise_ws(('Продольная ровность', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+            list_category = self.get_category(iries, value)
+
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+
+            for idx, iri in enumerate(iries):
+                if idx != len(iries) - 1:
+                    last_iri = iries[idx + 1]
+                else:
+                    break
+                #не известно как сработает для нескольких полос движения
+
+                if iri[-2] != last_iri[-2] and iri[-1] != last_iri[-1]:
+                    continue
+                else:
+                    row += 1
+                required_max_iri = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[5]
+
+                for col in range(1, 22):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                segment_distr = iri[-3] - iri[-4]
+                ws[f'A{row}'] = iri[-2][0]  # начало км
+                ws[f'B{row}'] = iri[-2][1]  # начало м
+                ws[f'C{row}'] = iri[-1][0]  # конец км
+                ws[f'D{row}'] = iri[-1][1]  # конец м
+                ws[f'E{row}'] = iri[-3] - iri[-4]
+                ws[f'F{row}'] = iri[2]
+
+                if iri[1] == direction[0]:
+                    # прямое полоса 1,2
+                    ws[f'{column_directly[iri[2]]}{row}'] = iri[0]
+                    ws[f'{column_back[iri[2]]}{row}'] = last_iri[0]
+                else:
+                    # обратное полоса 1,2
+                    ws[f'{column_directly[iri[2]]}{row}'] = last_iri[0]
+                    ws[f'{column_back[iri[2]]}{row}'] = iri[0]
+                # print(iries[idx:idx+iri[2]+1])
+                max_iri = max(iries[idx:idx + iri[2] + 1], key = lambda x: x[0])[0]
+                # print(max_iri)
+                iri_max_vals.append(max_iri)
+                ws[f'S{row}'] = max_iri
+                ws[f'T{row}'] = required_max_iri
+
+                if max_iri <= required_max_iri:
+                    check = 'Соответсвует'
+                    positive_counter += segment_distr
+                else:
+                    check = 'Не соответствует'
+                    negative_counter += segment_distr
+                self.data_pivot['ровность'].append(check)
+                ws[f'U{row}'] = check
+                iri_all.append(iri)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+            row += 2
+            ws[f'U{row}'] = f'Протяженность: {length} м'
+            ws[f'U{row}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 1}'] = f'Соответствует: {positive_counter} м'
+            ws[f'U{row + 1}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 2}'] = f'Не соответствует: {negative_counter} м'
+            ws[f'U{row + 2}'].alignment = self.total_cells_aligment
+            self.create_bar_diagram(differences = iri_max_vals,
+                                    title = (
+                                        "Оценка соответствия показателя продольной ровности покрытия проезжей части по расстоянию",
+                                        "Общая оценка показателя продольной ровности покрытия проезжей части"),
+                                    calculation_object = iri_all,
+                                    pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                    required = required_max_iri, le = True, end_way = False)
+
+    def write_coley (self):
+        ws = self.wb['Глубина колеи']
+        row = 8
+        positive_counter = 0
+        negative_counter = 0
+        name_ws_diagram = 'Диаграммы 6'
+        length = 0
+        coley_all = []
+        coley_max_vals = []
+        required_max_coley = 0
+        column_directly = [None, 'G', 'H', 'I', 'J', 'K', 'L']
+        column_back = [None, 'M', 'N', 'O', 'P', 'Q', 'R']
+        direction = ('Прямое', 'Обратное')
+        check = None
+        self.data_pivot['глубина колеи'] = []
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            elif self.is_empty_obj(value.get('Глубина колеи', None)):
+                self.invise_ws(('Глубина колеи', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+            coleys = []
+
+            # print(value.get('Глубина колеи', {}).get('Значение'))
+            for idx, val in enumerate(value.get('Глубина колеи', {}).get('Значение', [])):
+                if any([abs(val[2]) - abs(val[1]) >= x for x in self.list_gaps]) or (
+                        val[-4] == 0 and 0 < val[-3] <= 100):
+                    if val[0] == '-':
+                        self.data_pivot.get('глубина колеи').append(val[0])
+                        continue
+
+                    coleys.append(
+                        (float(val[0]) * 10, value.get('Глубина колеи', {}).get('Направление движения', [])[idx][0],
+                         int(value.get('Глубина колеи', {}).get('Полоса движения', [])[idx][0]),
+                         *val[1:]))
+
+                    # direction_iri.append(value.get('Оценка ровности IRI', {}).get('Направление движения', [])[idx])
+            if not coleys:
+                self.invise_ws(('Глубина колеи', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+            list_category = self.get_category(coleys, value)
+
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+
+            for idx, coley in enumerate(coleys):
+                if idx != len(coleys) - 1:
+                    last_coley = coleys[idx + 1]
+                else:
+                    break
+                # не известно как сработает для нескольких полос движения
+
+                if coley[-2] != last_coley[-2] and coley[-1] != last_coley[-1]:
+                    continue
+                else:
+                    row += 1
+                required_max_coley = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[6]
+
+                for col in range(1, 22):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                segment_distr = coley[-3] - coley[-4]
+                ws[f'A{row}'] = coley[-2][0]  # начало км
+                ws[f'B{row}'] = coley[-2][1]  # начало м
+                ws[f'C{row}'] = coley[-1][0]  # конец км
+                ws[f'D{row}'] = coley[-1][1]  # конец м
+                ws[f'E{row}'] = coley[-3] - coley[-4]
+                ws[f'F{row}'] = coley[2]
+
+                if coley[1] == direction[0]:
+                    # прямое полоса 1,2
+                    ws[f'{column_directly[coley[2]]}{row}'] = coley[0] if coley[0] != 0 else '-'
+                    ws[f'{column_back[coley[2]]}{row}'] = last_coley[0] if last_coley[0] != 0 else '-'
+                else:
+                    # обратное полоса 1,2
+                    ws[f'{column_directly[coley[2]]}{row}'] = last_coley[0] if last_coley[0] != 0 else '-'
+                    ws[f'{column_back[coley[2]]}{row}'] = coley[0] if coley[0] != 0 else '-'
+                # print(iries[idx:idx+iri[2]+1])
+                max_colley = max(coleys[idx:idx + coley[2] + 1], key = lambda x: x[0])[0]
+                # print(max_iri)
+                coley_max_vals.append(max_colley)
+                ws[f'S{row}'] = max_colley if max_colley != 0 else '-'
+                ws[f'T{row}'] = required_max_coley if max_colley != 0 else '-'
+
+                if max_colley <= required_max_coley:
+                    check = 'Соответсвует'
+                    positive_counter += segment_distr
+                else:
+                    check = 'Не соответствует'
+                    negative_counter += segment_distr
+                self.data_pivot['глубина колеи'].append(check)
+                ws[f'U{row}'] = check
+                coley_all.append(coley)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+            row += 2
+            ws[f'U{row}'] = f'Протяженность: {length} м'
+            ws[f'U{row}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 1}'] = f'Соответствует: {positive_counter} м'
+            ws[f'U{row + 1}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 2}'] = f'Не соответствует: {negative_counter} м'
+            ws[f'U{row + 2}'].alignment = self.total_cells_aligment
+            self.create_bar_diagram(differences = coley_max_vals,
+                                    title = (
+                                        "Оценка глубины колеи покрытия проезжей части (колейности) по расстоянию",
+                                        "Общая оценка глубина колеи покрытия проезжей части (колейности)"),
+                                    calculation_object = coley_all,
+                                    pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                    required = required_max_coley, le = True, end_way = False)
+
+    def write_clutch (self):
+        ws = self.wb['Сцепление']
+        row = 8
+        positive_counter = 0
+        negative_counter = 0
+        name_ws_diagram = 'Диаграммы 7'
+        length = 0
+        clutch_all = []
+        clutch_max_vals = []
+        required = 0
+        column_directly = [None, 'G', 'H', 'I', 'J', 'K', 'L']
+        column_back = [None, 'M', 'N', 'O', 'P', 'Q', 'R']
+        direction = ('Прямое', 'Обратное')
+        check = None
+        self.data_pivot['сцепление'] = []
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            elif self.is_empty_obj(value.get('Коэффициент сцепления', None)):
+                self.invise_ws(('Сцепление', name_ws_diagram))
+                # self.invise_ws(self.wb[name_ws_diagram])
+                return
+            clutchs = []
+
+            for idx, val in enumerate(value.get('Коэффициент сцепления', {}).get('Значение', [])):
+                if any([abs(val[2]) - abs(val[1]) >= x for x in self.list_gaps]) or (
+                        val[-4] == 0 and 0 < val[-3] <= 100):
+                    if val[0] == '-':
+                        self.data_pivot['сцепление'].append(val[0])
+                        continue
+                    # else:
+                    #     val_tmp = float(val[0])
+                    # clutchs.append(
+                    #     (val_tmp, value.get('Коэффициент сцепления', {}).get('Направление движения', [])[idx][0],
+                    #      int(value.get('Коэффициент сцепления', {}).get('Полоса движения', [])[idx][0]),
+                    #      *val[1:]))
+                    clutchs.append(
+                        (float(val[0]), value.get('Коэффициент сцепления', {}).get('Направление движения', [])[idx][0],
+                         int(value.get('Коэффициент сцепления', {}).get('Полоса движения', [])[idx][0]),
+                         *val[1:]))
+
+                    # direction_iri.append(value.get('Оценка ровности IRI', {}).get('Направление движения', [])[idx])
+
+            list_category = self.get_category(clutchs, value)
+
+            if len(self.data) > 2:
+                # ws.unmerge_cells(f'A{row}:I{row}')
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+
+            for idx, clutch in enumerate(clutchs):
+                if idx != len(clutchs) - 1:
+                    last_coley = clutchs[idx + 1]
+                else:
+                    break
+
+                if clutch[-2] != last_coley[-2] and clutch[-1] != last_coley[-1]:
+                    continue
+                else:
+                    row += 1
+                required = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[10]
+
+                for col in range(1, 22):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                segment_distr = clutch[-3] - clutch[-4]
+                ws[f'A{row}'] = clutch[-2][0]  # начало км
+                ws[f'B{row}'] = clutch[-2][1]  # начало м
+                ws[f'C{row}'] = clutch[-1][0]  # конец км
+                ws[f'D{row}'] = clutch[-1][1]  # конец м
+                ws[f'E{row}'] = clutch[-3] - clutch[-4]
+                ws[f'F{row}'] = clutch[2]
+
+                if clutch[1] == direction[0]:
+                    # прямое полоса 1,2
+                    ws[f'{column_directly[clutch[2]]}{row}'] = clutch[0] if clutch[0] != 0 else '-'
+                    ws[f'{column_back[clutch[2]]}{row}'] = last_coley[0] if last_coley[0] != 0 else '-'
+                else:
+                    # обратное полоса 1,2
+                    ws[f'{column_directly[clutch[2]]}{row}'] = last_coley[0] if last_coley[0] != 0 else '-'
+                    ws[f'{column_back[clutch[2]]}{row}'] = clutch[0] if clutch[0] != 0 else '-'
+                min_clutch = min(clutchs[idx:idx + clutch[2] + 1], key = lambda x: x[0])[0]
+                clutch_max_vals.append(min_clutch)
+                ws[f'S{row}'] = min_clutch if min_clutch != 0 else '-'
+                ws[f'T{row}'] = required if min_clutch != 0 else '-'
+                if min_clutch == 0:
+                    ws[f'U{row}'] = '-'
+                elif min_clutch >= required:
+                    check = 'Соответсвует'
+                    positive_counter += segment_distr
+                else:
+                    check = 'Не соответствует'
+                    negative_counter += segment_distr
+                self.data_pivot['сцепление'].append(check)
+                ws[f'U{row}'] = check
+                clutch_all.append(clutch)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+            row += 2
+            ws[f'U{row}'] = f'Протяженность: {length} м'
+            ws[f'U{row}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 1}'] = f'Соответствует: {positive_counter} м'
+            ws[f'U{row + 1}'].alignment = self.total_cells_aligment
+            ws[f'U{row + 2}'] = f'Не соответствует: {negative_counter} м'
+            ws[f'U{row + 2}'].alignment = self.total_cells_aligment
+            self.create_bar_diagram(differences = clutch_max_vals,
+                                    title = (
+                                        "Оценка сцепных свойств покрытияпроезжей части по расстоянию",
+                                        "Общая оценка сцепных свойств покрытия проезжей части"),
+                                    calculation_object = clutch_all,
+                                    pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                    required = required, ge = True, end_way = False)
+
+    def write_toughness (self):
+        ws = self.wb['Прочность']
+        row = 11
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        name_ws_diagram = 'Диаграммы 8'
+        all_values = []
+        required = 0
+        name_obj = 'Модуль упругости'
+        check = None
+        self.data_pivot['прочность'] = []
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            elif self.is_empty_obj(value.get(name_obj, None)):
+                self.invise_ws(('Прочность', name_ws_diagram))
+                return
+            if len(self.data) > 2:
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+
+            fact_values = []
+
+            for idx, val in enumerate(value.get(name_obj, {}).get('Е факт', [])):
+                if idx % 2 != 0:
+                    continue
+                if any([abs(val[2]) - abs(val[1]) >= x for x in self.list_gaps]) or (
+                        val[-4] == 0 and 0 < val[-3] <= 100):
+                    if val[0] == '-':
+                        self.data_pivot.get('прочность').append(val[0])
+                        continue
+                    fact_values.append((float(val[0]), float(value.get(name_obj, {}).get('К пр')[idx][0]), *val[1:]))
+
+            list_category = self.get_category(fact_values, value)
+            for idx, fact_val in enumerate(fact_values):
+                required = self.DICT_NORMATIVE_VALUE.get(list_category[idx][0])[7]
+                for col in range(1, 10):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                lenght_segment = fact_val[-3] - fact_val[-4]
+                k_pr = fact_val[1]
+                ws[f'A{row}'] = fact_val[-2][0]  # начало км
+                ws[f'B{row}'] = fact_val[-2][1]  # начало м
+                ws[f'C{row}'] = fact_val[-1][0]  # конец км
+                ws[f'D{row}'] = fact_val[-1][1]  # конец м
+                ws[f'E{row}'] = lenght_segment  # протяженность
+                ws[f'F{row}'] = round(float(fact_val[0]), 2)  # измеренный
+                ws[f'G{row}'] = required  # минимально допустимый
+                ws[f'H{row}'] = k_pr  # коэффициент прочности
+                if k_pr >= 0.9:
+                    check = 'Соответсвует'
+                    positive_counter += lenght_segment
+                else:
+                    check = 'Не соответствует'
+                    negative_counter += lenght_segment
+                self.data_pivot['прочность'].append(check)
+                ws[f'I{row}'] = check
+
+                row += 1
+                all_values.append(fact_val)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+
+        row += 2
+        ws[f'I{row}'] = f'Протяженность, м: {length}'
+        ws[f'I{row}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 1}'] = f'Соответствует, м: {positive_counter}'
+        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 2}'] = f'Не соответствует (ремонт), м: {negative_counter}'
+        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+
+        self.create_bar_diagram(differences = tuple([float(slopes[1]) for slopes in all_values]),
+                                title = ("Оценка прочности дорожной одежды по расстоянию",
+                                         "Общая оценка прочности дорожной одежды"),
+                                calculation_object = all_values,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                required = 0.9, ge = True, end_way = False)
+
+    def write_ball_defect (self):
+        """
+        Оценка состояния покрытия (баллы)
+        TODO:сейчас нет кода дефектов, можно записать код дефекта в створ и переписать функцию под створы
+        """
+
+        ball_deffects = (None, 5.0, 4.9, 4.6, 4.3, (3.9, 3.5), (3.6, 2.5), 3.2, 2.9, 2.6, 4.5,
+                         3.5, 3.0, 2.5, 2.0, 2.3, 1.9, 1.6, 1.2, 0.9, 0.5, 1.2, 0.9, 0.5,
+                         4.5, 3.5, 2.7, 2.2, 3.0, 2.4, 3.0, 2.5, 2.0, 1.8, 3.0, 3.0, 3.0, 3.0, 3.0, 'Разрушение ДО')
+
+        ws = self.wb['Балл дефекта']
+        row = 6
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        name_ws_diagram = 'Диаграммы 9'
+        all_values = []
+        required = 3.5
+        name_obj = 'Оценка состояния покрытия (баллы)'
+        check = None
+        self.data_pivot['баллы']=[]
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            elif self.is_empty_obj(value.get(name_obj, None)):
+                self.invise_ws(('Балл дефекта', name_ws_diagram))
+                return
+            if len(self.data) > 2:
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+
+            fact_values = []
+            for val in value.get(name_obj, {}).get('Значение', []):
+                # ic(val)
+                if any([abs(val[2]) - abs(val[1]) >= x for x in self.list_gaps]) or (
+                        val[-4] == 0 and 0 < val[-3] <= 100):
+                    if val[0] == '-':
+                        self.data_pivot['баллы'].append(val[0])
+                        continue
+                    fact_values.append(val)
+            # ic(fact_values)
+            # list_category = self.get_category(fact_values, value)
+            for idx, fact_val in enumerate(fact_values):
+                for col in range(1, 10):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                lenght_segment = fact_val[-3] - fact_val[-4]
+                ws[f'A{row}'] = fact_val[-2][0]  # начало км
+                ws[f'B{row}'] = fact_val[-2][1]  # начало м
+                ws[f'C{row}'] = fact_val[-1][0]  # конец км
+                ws[f'D{row}'] = fact_val[-1][1]  # конец м
+                ws[f'E{row}'] = lenght_segment  # протяженность
+                ws[f'F{row}'] = 0  # код дефекта если добавить в объект такое поле то можно его загружать в базу
+                ws[f'G{row}'] = fact_val[0]  # оценка в баллах
+                ws[f'H{row}'] = required  # требуемый
+                if float(fact_val[0]) >= required:
+                    check = 'Соответсвует'
+                    positive_counter += lenght_segment
+                else:
+                    check = 'Не соответствует'
+                    negative_counter += lenght_segment
+                self.data_pivot['баллы'].append(check)
+                ws[f'I{row}'] = check
+                row += 1
+                all_values.append(fact_val)
+                length = value.get('Ось дороги').get('Начало трассы')[0][2]
+
+        row += 2
+        ws[f'I{row}'] = f'Протяженность, м: {length}'
+        ws[f'I{row}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 1}'] = f'Соответствует, м: {positive_counter}'
+        ws[f'I{row + 1}'].alignment = self.total_cells_aligment
+        ws[f'I{row + 2}'] = f'Не соответствует (ремонт), м: {negative_counter}'
+        ws[f'I{row + 2}'].alignment = self.total_cells_aligment
+        # ws[f'I{row + 3}'] = f'Не соответствует(капитальный ремонт), м: {negative_counter_repair_capital}'
+        # ws[f'I{row + 3}'].alignment = self.total_cells_aligment
+
+        self.create_bar_diagram(differences = tuple([float(slopes[0]) for slopes in all_values]),
+                                title = ("Оценка прочности дорожной одежды по расстоянию",
+                                         "Общая оценка прочности дорожной одежды"),
+                                calculation_object = all_values,
+                                pos_neg_all = (positive_counter, negative_counter, length), page = name_ws_diagram,
+                                required = required, ge = True, end_way = False)
+
+    def pivot_table (self):
+        ws = self.wb['Планирование работ']
+        row = 5
+        positive_counter = 0
+        negative_counter = 0
+        length = 0
+        name_ws_diagram = 'Диаграммы 9'
+
+        for key, value in self.data.items():
+            if self.is_str(value):
+                continue
+            ic(self.data_pivot)
+            if len(self.data) > 2:
+                ws.merge_cells(f'A{row}:K{row}')
+                ws[f'A{row}'] = key
+                row += 1
+            # points = value.get('Поперечный створ', {}).get('Код дефекта', [])
+            points = value.get('Оценка состояния покрытия (баллы)', {}).get('Значение', [])
+            ic(points)
+            for idx, point in enumerate(points):
+                for col in range(1, 14):
+                    ws.cell(row = row, column = col).border = self.table_cells_border
+                    ws.cell(row = row, column = col).alignment = self.table_cells_aligment
+                    ws.cell(row = row, column = col).font = self.table_cells_font
+                    ws.row_dimensions[row].height = None
+                # if idx != len(points) - 1:
+                #     last_point = points[idx + 1]
+                # else:
+                #     last_point = None
+                ws[f'A{row}'] = point[-2][0]  # начало км
+                ws[f'B{row}'] = point[-2][1]  # начало м
+                ws[f'C{row}'] = point[-1][0]  # конец км
+                ws[f'D{row}'] = point[-1][1]  # конец м
+                ws[f'E{row}'] = point[-3]-point[-4]  # протяженность
+                ws[f'F{row}'] =self.data_pivot.get('ширина проезжей части')[idx]
+                ws[f'G{row}'] =self.data_pivot.get('ширина обочины')[idx]
+                ws[f'H{row}'] =self.data_pivot.get('ровность')[idx]
+                ws[f'I{row}'] =self.data_pivot.get('глубина колеи')[idx]
+                ws[f'J{row}'] =self.data_pivot.get('сцепление')[idx]
+                ws[f'K{row}'] =self.data_pivot.get('прочность')[idx]
+                ws[f'L{row}'] =self.data_pivot.get('баллы')[idx]
+                ws[f'M{row}'] ='результат'
+                row+=1
+
+
+
+
 
 class WriterApplication(WriterExcel):
     def __init__ (self, data: dict = None, path: str = None, data_interface: dict = None):
@@ -2291,7 +2905,7 @@ class WriterApplicationCityTP(WriterApplication):
         super().__init__(data = data, path = path, data_interface = data_interface)
 
         self.cells_font_result = FontStyle(name = 'Times New Roman', size = 12, bold = True)
-        #self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
+        # self.table_cells_font = FontStyle(name = 'Times New Roman', size = 12)
         thin = Side(border_style = "thin", color = "000000")
         # thick = Side(border_style = "thick", color = "000000")
         self.table_cells_border = Border(left = thin, right = thin, top = thin, bottom = thin, )
@@ -2415,7 +3029,7 @@ class WriterApplicationCityTP(WriterApplication):
                     ws[f'K{row}'].border = self.table_cells_border
                     ws[f'K{row}'].alignment = self.table_cells_aligment
                     ws[f'K{row}'].font = self.table_cells_font
-
+                    ws.row_dimensions[row].height = None
                     row += 1
 
             counter_sum += counter
@@ -2515,7 +3129,7 @@ class WriterApplicationCityTP(WriterApplication):
                 ws[f'L{row}'].border = self.table_cells_border
                 ws[f'L{row}'].alignment = self.table_cells_aligment
                 ws[f'L{row}'].font = self.table_cells_font
-
+                ws.row_dimensions[row].height = None
                 row += 1
 
             counter_sum += counter
@@ -4325,18 +4939,19 @@ def new_titel (name_road):
 def main ():
     conn = db.Query('OMSK_REGION_2024')  # 'IZHEVSK_CITY_2023'
     list_roads = conn.set_road_name()
-    data = conn.get_dad_datas(list_roads[5])  # 'М14 Е105 - до с.Вишневое'
-    # print(data)
+    #data_tp = conn.get_tp_datas(list_roads[0])
+    data_dad = conn.get_dad_datas(list_roads[5])  # 'М14 Е105 - до с.Вишневое'
+    print(data_dad)
     conn.close_db()
     diсt_inter = {'year': 2024,
                   'tip_passport': 'city',
                   'history_match': '',
                   'area_conditioins': ''}
-    # reports = WriterExcelTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
-    #                         data_interface = diсt_inter)
+    # reports = WriterExcelTP(data = data_tp, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version\отчеты_тест',
+    #                          data_interface = diсt_inter)
     # apps = WriterApplicationCityTP(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
     #                         data_interface = diсt_inter)
-    dad = WriterExcelDAD(data = data, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version',
+    dad = WriterExcelDAD(data = data_dad, path = r'C:\Users\sibregion\Desktop\test\ReportGenerator-new_version\отчеты_тест',
                          data_interface = diсt_inter)
 
     # apps = WriterApplicationCityTP(data = data,
